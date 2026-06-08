@@ -14,8 +14,11 @@ interface NavBarProps {
   rol: Role;
   tabs?: NavTab[];
   onLogout?: () => void;
+  onReset?: () => void;
   extra?: React.ReactNode;
 }
+
+const SHOW_RESET = process.env.NEXT_PUBLIC_SHOW_RESET === 'true';
 
 const ROLE_INITIALS: Record<Role, string> = {
   cliente:     'CL',
@@ -23,7 +26,7 @@ const ROLE_INITIALS: Record<Role, string> = {
   coordinador: 'CO',
 };
 
-export default function NavBar({ activeLabel, rol, tabs = [], onLogout, extra }: NavBarProps) {
+export default function NavBar({ activeLabel, rol, tabs = [], onLogout, onReset, extra }: NavBarProps) {
   return (
     <div style={{
       height: 52, background: C.white, borderBottom: `1px solid ${C.g200}`,
@@ -56,6 +59,18 @@ export default function NavBar({ activeLabel, rol, tabs = [], onLogout, extra }:
         <div style={{ flex: 1 }} />
       )}
 
+      {SHOW_RESET && onReset && (
+        <button
+          onClick={onReset}
+          style={{
+            flexShrink: 0, background: C.g50, color: C.g500,
+            border: `1px solid ${C.g200}`, fontSize: 11, borderRadius: 6,
+            padding: '3px 8px', cursor: 'pointer', fontFamily: 'Roboto',
+          }}
+        >
+          ↺ Reiniciar demo
+        </button>
+      )}
       {extra && <div style={{ flexShrink: 0 }}>{extra}</div>}
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>

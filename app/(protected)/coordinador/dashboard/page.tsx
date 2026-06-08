@@ -202,6 +202,11 @@ export default function CoordinadorDashboard() {
     router.push('/login');
   }
 
+  async function handleReset() {
+    await fetch('/api/reset', { method: 'POST' });
+    await refetch();
+  }
+
   const visibles = solicitudes.filter(s => s.status !== 'en_analisis');
 
   const displayed = visibles.filter(s => {
@@ -412,7 +417,24 @@ export default function CoordinadorDashboard() {
         activeLabel="Dashboard"
         tabs={TABS}
         onLogout={handleLogout}
-        extra={<DeviceToggle device={device} onChange={setDevice} />}
+        onReset={handleReset}
+        extra={
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <a
+              href="/cliente/index.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                background: 'transparent', color: C.blue, fontSize: 12,
+                border: `1px solid ${C.blue}30`, borderRadius: 6, padding: '4px 10px',
+                textDecoration: 'none', whiteSpace: 'nowrap',
+              }}
+            >
+              ↗ Demo B2C
+            </a>
+            <DeviceToggle device={device} onChange={setDevice} />
+          </div>
+        }
       />
       {device === 'desktop'
         ? desktopContent

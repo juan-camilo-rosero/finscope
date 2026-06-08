@@ -32,6 +32,10 @@ function clonar<T>(v: T): T {
 // la UI usa Context de cliente como fuente de verdad de sesión (§8.2).
 let _store: Solicitud[] = clonar(SEED_SOLICITUDES);
 
+export function reset(): void {
+  _store = clonar(SEED_SOLICITUDES);
+}
+
 export function listar(filtro?: { status?: Status; flujo?: Flujo; ejecutivo?: string }): Solicitud[] {
   let resultado = _store;
   if (filtro?.status)    resultado = resultado.filter(s => s.status === filtro.status);
@@ -106,7 +110,7 @@ export function crear(input: CrearInput): Solicitud {
 export function cambiarEstado(
   id: string,
   nuevoStatus: Status,
-  meta?: { motivo?: string; analista?: string; coordinador?: string }
+  meta?: { motivo?: string; analista?: string; coordinador?: string; analista_override?: boolean; motivoAnulacion?: string }
 ): Solicitud {
   const idx = _store.findIndex(s => s.id === id);
   if (idx === -1) throw new Error(`Solicitud ${id} no encontrada`);
@@ -121,8 +125,10 @@ export function cambiarEstado(
   sol.semaforo  = semaforoDe(nuevoStatus);
   sol.updated   = 'Justo ahora';
 
-  if (meta?.analista)    sol.analista    = meta.analista;
-  if (meta?.coordinador) sol.coordinador = meta.coordinador;
+  if (meta?.analista)            sol.analista          = meta.analista;
+  if (meta?.coordinador)         sol.coordinador       = meta.coordinador;
+  if (meta?.analista_override)   sol.analista_override = meta.analista_override;
+  if (meta?.motivoAnulacion)     sol.motivoAnulacion   = meta.motivoAnulacion;
 
   const labelMap: Record<Status, string> = {
     radicada:          'Radicada',

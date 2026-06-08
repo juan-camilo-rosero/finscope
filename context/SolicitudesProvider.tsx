@@ -7,7 +7,7 @@ interface SolicitudesContextValue {
   solicitudes: Solicitud[];
   loading: boolean;
   crearSolicitud: (input: CrearInput) => Promise<Solicitud>;
-  cambiarEstado: (id: string, nuevoStatus: Status, meta?: Record<string, string>) => Promise<Solicitud>;
+  cambiarEstado: (id: string, nuevoStatus: Status, meta?: Record<string, unknown>) => Promise<Solicitud>;
   obtener: (id: string) => Solicitud | undefined;
   refetch: () => Promise<void>;
 }
@@ -63,7 +63,7 @@ export function SolicitudesProvider({ children }: { children: React.ReactNode })
   }, []);
 
   const cambiarEstado = useCallback(async (
-    id: string, nuevoStatus: Status, meta?: Record<string, string>
+    id: string, nuevoStatus: Status, meta?: Record<string, unknown>
   ): Promise<Solicitud> => {
     const res = await fetch(`/api/solicitudes/${id}`, {
       method: 'PATCH',

@@ -77,4 +77,7 @@ export interface Solicitud {
   timeline: TimelineEvent[];
   updated: string;
   createdAt: string;
+  sarlaft?: boolean;
+  analista_override?: boolean;
+  motivoAnulacion?: string;
 }

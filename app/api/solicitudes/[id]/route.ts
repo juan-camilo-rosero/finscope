@@ -11,11 +11,20 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const body = await req.json() as { status: Status; motivo?: string; analista?: string; coordinador?: string };
+    const body = await req.json() as {
+      status: Status;
+      motivo?: string;
+      analista?: string;
+      coordinador?: string;
+      analista_override?: boolean;
+      motivoAnulacion?: string;
+    };
     const actualizada = cambiarEstado(params.id, body.status, {
-      motivo:      body.motivo,
-      analista:    body.analista,
-      coordinador: body.coordinador,
+      motivo:            body.motivo,
+      analista:          body.analista,
+      coordinador:       body.coordinador,
+      analista_override: body.analista_override,
+      motivoAnulacion:   body.motivoAnulacion,
     });
     return NextResponse.json(actualizada);
   } catch (err) {

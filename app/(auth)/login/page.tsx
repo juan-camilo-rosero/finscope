@@ -157,10 +157,14 @@ export default function LoginPage() {
           )}
         </form>
 
-        {/* Link al cliente */}
-        <div style={{ marginTop: 24, textAlign: 'center' }}>
+        {/* Links al cliente */}
+        <div style={{ marginTop: 24, textAlign: 'center', display: 'flex', gap: 8, justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap' }}>
           <a href="/cliente/radicar" style={{ fontSize: 12, color: C.blue, textDecoration: 'none' }}>
             ¿Cliente nuevo? Radica tu solicitud →
+          </a>
+          <span style={{ fontSize: 12, color: C.g200 }}>·</span>
+          <a href="/cliente/index.html" target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: C.blue, textDecoration: 'none' }}>
+            Ver experiencia cliente B2C ↗
           </a>
         </div>
       </div>

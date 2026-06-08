@@ -51,9 +51,14 @@ function CaseItem({ sol, selected, onClick }: { sol: Solicitud; selected: boolea
       }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 3 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
           <StatusDot status={sol.status} />
           <span style={{ fontSize: 14, fontWeight: 600, color: C.g900 }}>{sol.cliente}</span>
+          {sol.sarlaft && (
+            <span style={{ fontSize: 10, fontWeight: 600, background: C.dangerL, color: C.danger, borderRadius: 4, padding: '2px 6px' }}>
+              SARLAFT
+            </span>
+          )}
         </div>
         {sol.status === 'devuelta_analista' && (
           <span style={{ fontSize: 10, fontWeight: 600, background: C.dangerL, color: C.danger, borderRadius: 4, padding: '2px 6px' }}>
@@ -122,10 +127,26 @@ function MotorCard({ sol }: { sol: Solicitud }) {
         </button>
         {open && (
           <div style={{ padding: '12px 0 16px' }}>
-            <p style={{ fontSize: 12, color: C.g700, lineHeight: 1.6 }}>
-              El motor pondera historial de pagos, DTI, antigüedad, tipo de operación y comportamiento de ahorro.
-              El analista mantiene la responsabilidad final de la decisión.
+            <p style={{ fontSize: 12, color: C.g700, lineHeight: 1.6, marginBottom: 14 }}>
+              El motor pondera 5 factores. Cada porcentaje indica cuánto pesa ese factor en la recomendación final.
             </p>
+            {([
+              ['Historial crediticio',   35],
+              ['Capacidad de pago',      25],
+              ['Nivel de endeudamiento', 20],
+              ['Estabilidad laboral',    12],
+              ['Garantía del vehículo',   8],
+            ] as [string, number][]).map(([label, pct]) => (
+              <div key={label} style={{ marginBottom: 10 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <span style={{ fontSize: 12, color: C.g700 }}>{label}</span>
+                  <span style={{ fontSize: 12, color: C.g500, fontWeight: 500 }}>{pct}%</span>
+                </div>
+                <div style={{ height: 6, borderRadius: 3, background: C.g200 }}>
+                  <div style={{ height: '100%', width: `${pct * 100 / 35}%`, borderRadius: 3, background: s.color, transition: 'width 0.4s ease' }} />
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -443,6 +464,31 @@ function ActionZone({ solId, cliente, onEnviar, onAnular, onRechazar, onSegunda 
         ))}
       </div>
 
+      {mode && mode !== 'segunda' && (() => {
+        const resultados: Record<string, { bg: string; border: string; icon: string; title: string; body: string }> = {
+          aceptar:  { bg: C.successL, border: '#86efac', icon: '✓', title: 'Recomendación aceptada',  body: 'Coincides con el motor. El caso pasa al coordinador con tu validación.' },
+          anular:   { bg: C.warnL,    border: '#fcd34d', icon: '⇄', title: 'Recomendación anulada',   body: 'Tu override quedó registrado con motivo y categoría conforme a SARLAFT.' },
+          rechazar: { bg: C.dangerL,  border: '#fca5a5', icon: '✕', title: 'Caso rechazado',           body: 'El caso se cierra. Esta acción se puede deshacer 30 segundos.' },
+        };
+        const r = resultados[mode];
+        if (!r) return null;
+        return (
+          <div style={{ borderRadius: 10, border: `1px solid ${r.border}`, background: r.bg, padding: '12px 14px', display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 4 }}>
+            <span style={{ fontSize: 18, lineHeight: 1, flexShrink: 0 }}>{r.icon}</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: C.g900, marginBottom: 2 }}>{r.title}</div>
+              <div style={{ fontSize: 12, color: C.g700, lineHeight: 1.5 }}>{r.body}</div>
+            </div>
+            <button
+              onClick={() => setMode(null)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, color: C.g500, flexShrink: 0, padding: '2px 4px', fontFamily: 'Roboto' }}
+            >
+              Cambiar
+            </button>
+          </div>
+        );
+      })()}
+
       {mode === 'aceptar' && (
         <div>
           <textarea
@@ -606,7 +652,10 @@ export default function AnalistaCola() {
 
   async function handleAnular(motivo: string, categoria: string) {
     if (!sel) return;
-    await cambiarEstado(sel.id, 'en_coordinacion', { motivo: `[OVERRIDE: ${categoria}] ${motivo}` });
+    await cambiarEstado(sel.id, 'en_coordinacion', {
+      analista_override: true,
+      motivoAnulacion: `[${categoria}] ${motivo}`,
+    });
     const id = sel.id; const cliente = sel.cliente;
     setSelId(null);
     pushToast(
@@ -628,6 +677,12 @@ export default function AnalistaCola() {
 
   function handleSegunda() {
     pushToast('Segunda opinión no disponible en el prototipo.', () => {});
+  }
+
+  async function handleReset() {
+    await fetch('/api/reset', { method: 'POST' });
+    await refetch();
+    pushToast('Demo reiniciado.', () => {});
   }
 
   const sectionLabel = { fontSize: 11, fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.7px', color: C.g500, marginBottom: 8 };
@@ -730,6 +785,7 @@ export default function AnalistaCola() {
         activeLabel="Cola de análisis"
         tabs={TABS}
         onLogout={handleLogout}
+        onReset={handleReset}
         extra={<DeviceToggle device={device} onChange={setDevice} />}
       />
 

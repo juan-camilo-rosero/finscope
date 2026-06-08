@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import Logo from '../../../components/shell/Logo';
 import DeviceToggle from '../../../components/shell/DeviceToggle';
-import { C } from '../../../lib/theme';
+import { C, calcCuota, fmt } from '../../../lib/theme';
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
@@ -18,7 +18,7 @@ interface FormData {
   correo: string; celular: string; autocompletado: boolean;
   tipoContrato: string; empresa: string; ingresos: string; egresos: string;
   marca: string; modelo: string; anio: string;
-  valorComercial: string; cuotaInicial: string;
+  valorComercial: string; cuotaInicial: string; concesionario: string;
   plazo: string; aceptaTerminos: boolean;
 }
 
@@ -27,7 +27,7 @@ const EMPTY: FormData = {
   correo: '', celular: '', autocompletado: false,
   tipoContrato: '', empresa: '', ingresos: '', egresos: '',
   marca: '', modelo: '', anio: '',
-  valorComercial: '', cuotaInicial: '',
+  valorComercial: '', cuotaInicial: '', concesionario: '',
   plazo: '', aceptaTerminos: false,
 };
 
@@ -184,8 +184,12 @@ function FormContent({ section, data, setData, mobile = false }: {
           <Field label="Valor comercial" value={data.valorComercial} placeholder="$138.000.000" required
             onChange={v => setData(d => ({ ...d, valorComercial: v }))} />
         </div>
-        <Field label="Cuota inicial" value={data.cuotaInicial} placeholder="$27.600.000" required
-          onChange={v => setData(d => ({ ...d, cuotaInicial: v }))} />
+        <div style={g2}>
+          <Field label="Cuota inicial" value={data.cuotaInicial} placeholder="$27.600.000" required
+            onChange={v => setData(d => ({ ...d, cuotaInicial: v }))} />
+          <Field label="Concesionario" value={data.concesionario} placeholder="Nombre del concesionario" required
+            onChange={v => setData(d => ({ ...d, concesionario: v }))} />
+        </div>
         {financiar > 0 && (
           <div style={{
             background: C.magentaL, borderRadius: 9, padding: '12px 16px',
@@ -254,12 +258,15 @@ function SideCard({ data }: { data: FormData }) {
   const valor = parseInt(data.valorComercial.replace(/\D/g, '') || '0');
   const inicial = parseInt(data.cuotaInicial.replace(/\D/g, '') || '0');
   const financiar = valor - inicial;
+  const plazoNum = parseInt(data.plazo) || 0;
+  const cuota = financiar > 0 && plazoNum > 0 ? calcCuota(financiar, plazoNum) : 0;
   const rows: Array<[string, string]> = [
     ['Cliente', data.nombre || '—'],
     ['Vehículo', data.marca && data.modelo ? `${data.marca} ${data.modelo}` : '—'],
     ['Valor comercial', valor ? `$${valor.toLocaleString('es-CO')}` : '—'],
     ['Cuota inicial', inicial ? `$${inicial.toLocaleString('es-CO')}` : '—'],
     ['Monto a financiar', financiar > 0 ? `$${financiar.toLocaleString('es-CO')}` : '—'],
+    ['Cuota estimada', cuota > 0 ? `${fmt(cuota)}/mes` : '—'],
   ];
   return (
     <div style={{ width: 260, flexShrink: 0 }}>
@@ -308,11 +315,9 @@ export default function ClienteRadicar() {
   const [successId, setSuccessId] = useState<string | null>(null);
 
   const sectionFill = [
-    !!(data.numDoc && data.nombre && data.correo && data.celular
-      && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.correo)
-      && data.celular.replace(/\D/g, '').length === 10),
-    !!(data.tipoContrato && data.empresa && data.ingresos && data.egresos),
-    !!(data.marca && data.modelo && data.anio && data.valorComercial && data.cuotaInicial),
+    !!(data.numDoc && data.nombre && data.fechaNac && data.correo && data.celular),
+    !!(data.tipoContrato && data.ingresos && data.egresos),
+    !!(data.marca && data.modelo && data.valorComercial && data.cuotaInicial && data.concesionario),
     !!(data.plazo && data.aceptaTerminos),
   ];
   const pct = Math.round(sectionFill.filter(Boolean).length / 4 * 100);

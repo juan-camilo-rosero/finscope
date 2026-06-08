@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { adminAuth } from '../../lib/firebase/firebase.admin';
 import { ROLE_BY_EMAIL } from '../../lib/roles';
 import { SolicitudesProvider } from '../../context/SolicitudesProvider';
+import SkeletonGuard from '../../components/shell/SkeletonGuard';
 
 export default async function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const cookieStore = cookies();
@@ -30,7 +31,9 @@ export default async function ProtectedLayout({ children }: { children: React.Re
 
   return (
     <SolicitudesProvider>
-      {children}
+      <SkeletonGuard>
+        {children}
+      </SkeletonGuard>
     </SolicitudesProvider>
   );
 }

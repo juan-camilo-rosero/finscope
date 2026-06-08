@@ -42,6 +42,7 @@ export const SEED_SOLICITUDES: Solicitud[] = [
     ],
     updated: 'Hace 30 min',
     createdAt: ahora,
+    analista_override: false,
   },
   {
     id: 'SOL-2024-0897',
@@ -79,6 +80,7 @@ export const SEED_SOLICITUDES: Solicitud[] = [
     ],
     updated: 'Hace 2 h',
     createdAt: '2024-04-24T09:00:00.000Z',
+    analista_override: false,
   },
   {
     id: 'SOL-2024-0903',
@@ -117,6 +119,7 @@ export const SEED_SOLICITUDES: Solicitud[] = [
     ],
     updated: 'Hace 4 h',
     createdAt: '2024-04-22T08:00:00.000Z',
+    analista_override: false,
   },
   {
     id: 'SOL-2024-0845',
@@ -155,6 +158,7 @@ export const SEED_SOLICITUDES: Solicitud[] = [
     ],
     updated: 'Hace 2 días',
     createdAt: '2024-04-01T09:00:00.000Z',
+    analista_override: false,
   },
 
   // ─── FLUJO NUEVO ──────────────────────────────────────────────────────────
@@ -194,6 +198,8 @@ export const SEED_SOLICITUDES: Solicitud[] = [
     ],
     updated: 'Hace 1 h',
     createdAt: '2024-04-24T11:00:00.000Z',
+    sarlaft: false,
+    analista_override: false,
   },
   {
     id: 'SOL-2024-0872',
@@ -231,6 +237,8 @@ export const SEED_SOLICITUDES: Solicitud[] = [
     ],
     updated: 'Hace 28 min',
     createdAt: '2024-04-23T10:00:00.000Z',
+    sarlaft: false,
+    analista_override: false,
   },
   {
     id: 'SOL-2024-0875',
@@ -271,6 +279,8 @@ export const SEED_SOLICITUDES: Solicitud[] = [
     ],
     updated: 'Hace 3 h',
     createdAt: '2024-04-21T09:00:00.000Z',
+    sarlaft: false,
+    analista_override: false,
   },
   {
     id: 'SOL-2024-0871',
@@ -311,5 +321,7 @@ export const SEED_SOLICITUDES: Solicitud[] = [
     ],
     updated: 'Hace 12 min',
     createdAt: '2024-04-18T08:00:00.000Z',
+    sarlaft: true,
+    analista_override: false,
   },
 ];

@@ -71,7 +71,12 @@ function QueueRow({ sol, selected, onClick }: { sol: Solicitud; selected: boolea
       <td style={{ padding: '12px 14px' }}>
         <div style={{ fontSize: 13, fontWeight: 600, color: C.g900 }}>{sol.cliente}</div>
         <div style={{ fontSize: 11, color: C.g500, fontWeight: 400, marginTop: 2 }}>{sol.id}</div>
-        <div style={{ marginTop: 4 }}><OriginBadge origen={sol.origen} /></div>
+        <div style={{ marginTop: 4, display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center' }}>
+          <OriginBadge origen={sol.origen} />
+          {sol.analista_override && (
+            <div style={{ fontSize: 10, color: C.warn, fontWeight: 600 }}>⚠ Override del analista</div>
+          )}
+        </div>
       </td>
       <td style={{ padding: '12px 14px' }}>
         <div style={{ fontSize: 13, color: C.g700 }}>{fmt(sol.monto)}</div>
@@ -145,8 +150,16 @@ function CaseDetailPanel({
         <div style={{ fontSize: 13, color: C.g500, marginTop: 2 }}>
           {sol.id} · {fmt(sol.monto)} · {sol.plazoMeses} meses
         </div>
-        <div style={{ display: 'flex', gap: 8, marginTop: 8, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 8, marginTop: 8, alignItems: 'center', flexWrap: 'wrap' }}>
           <StatusBadge status={sol.status} />
+          {sol.analista_override && (
+            <span style={{
+              fontSize: 11, color: C.warn, fontWeight: 600, background: C.warnL,
+              padding: '3px 8px', borderRadius: 12, border: `1px solid ${C.warn}30`,
+            }}>
+              ⚠ Override del analista
+            </span>
+          )}
         </div>
       </div>
 
@@ -220,9 +233,18 @@ function CaseDetailPanel({
               Analista
             </span>
           </div>
-          <p style={{ fontSize: 13, color: sol.analista ? C.g700 : C.g500, lineHeight: 1.5 }}>
-            {sol.analista ? `Validado por ${sol.analista}` : 'Sin observaciones del analista'}
-          </p>
+          {sol.analista_override && sol.motivoAnulacion ? (
+            <>
+              <div style={{ borderRadius: 12, background: C.warnL, border: `1px solid ${C.warn}40`, padding: 14, marginBottom: 10 }}>
+                <p style={{ fontSize: 12, fontWeight: 600, color: C.warn, marginBottom: 4 }}>Motivo del override</p>
+                <p style={{ fontSize: 13, color: C.g700 }}>{sol.motivoAnulacion}</p>
+              </div>
+            </>
+          ) : (
+            <p style={{ fontSize: 13, color: sol.analista ? C.g700 : C.g500, lineHeight: 1.5 }}>
+              {sol.analista ? `Validado por ${sol.analista}` : 'Sin observaciones del analista'}
+            </p>
+          )}
         </div>
       ) : null}
 
@@ -297,7 +319,14 @@ function CaseDetailPanel({
                 {i < sol.timeline.length - 1 && <div style={{ width: 1, flex: 1, background: C.g200, marginTop: 2 }} />}
               </div>
               <div style={{ flex: 1, paddingBottom: i < sol.timeline.length - 1 ? 6 : 0 }}>
-                <div style={{ fontSize: 12, color: C.g900, fontWeight: i === sol.timeline.length - 1 ? 600 : 400 }}>{t.label}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 12, color: C.g900, fontWeight: i === sol.timeline.length - 1 ? 600 : 400 }}>{t.label}</span>
+                  {sol.analista_override && t.label === 'En coordinación' && (
+                    <span style={{ fontSize: 10, color: C.warn, fontWeight: 600, background: C.warnL, padding: '2px 6px', borderRadius: 10, border: `1px solid ${C.warn}30` }}>
+                      ⚠ Override
+                    </span>
+                  )}
+                </div>
                 <div style={{ fontSize: 11, color: C.g500, marginTop: 1 }}>{t.date}</div>
               </div>
             </div>
@@ -440,6 +469,12 @@ function ColaContent() {
   async function handleLogout() {
     await fetch('/api/auth/session', { method: 'DELETE' });
     router.push('/login');
+  }
+
+  async function handleReset() {
+    await fetch('/api/reset', { method: 'POST' });
+    await refetch();
+    pushToast('Demo reiniciado.', () => {});
   }
 
   function pushToast(msg: string, undo: () => void) {
@@ -634,6 +669,7 @@ function ColaContent() {
         activeLabel="Cola de decisión"
         tabs={TABS}
         onLogout={handleLogout}
+        onReset={handleReset}
         extra={<DeviceToggle device={device} onChange={setDevice} />}
       />
       {device === 'desktop'
