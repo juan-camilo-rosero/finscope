@@ -453,7 +453,7 @@ function ActionZone({ solId, cliente, onEnviar, onAnular, onRechazar, onSegunda 
           />
           <button
             onClick={() => setConfirm('aceptar')}
-            style={{ marginTop: 10, width: '100%', padding: 12, borderRadius: 9, background: C.success, color: '#fff', fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer', fontFamily: 'Roboto', boxShadow: `0 4px 12px ${C.success}40` }}
+            style={{ marginTop: 10, width: '100%', padding: 12, borderRadius: 9, background: C.magenta, color: '#fff', fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer', fontFamily: 'Roboto', boxShadow: `0 4px 12px ${C.magenta}40` }}
           >
             ✓ Validar y enviar al coordinador
           </button>

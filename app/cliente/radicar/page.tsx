@@ -10,27 +10,25 @@ const SECTIONS = [
   'Datos del cliente',
   'Datos laborales y financieros',
   'Datos del vehículo',
-  'Documentos',
+  'Condiciones y documentos',
 ];
 
-type UploadSt = 'empty' | 'done';
-
 interface FormData {
-  tipoDoc: string; numDoc: string; nombre: string; fechaNac: string;
+  numDoc: string; nombre: string; fechaNac: string;
   correo: string; celular: string; autocompletado: boolean;
   tipoContrato: string; empresa: string; ingresos: string; egresos: string;
-  tipoVeh: string; marca: string; modelo: string; anio: string;
-  valorComercial: string; cuotaInicial: string; plazo: string; concesionario: string;
-  uploads: Record<string, UploadSt>;
+  marca: string; modelo: string; anio: string;
+  valorComercial: string; cuotaInicial: string;
+  plazo: string; aceptaTerminos: boolean;
 }
 
 const EMPTY: FormData = {
-  tipoDoc: '', numDoc: '', nombre: '', fechaNac: '',
+  numDoc: '', nombre: '', fechaNac: '',
   correo: '', celular: '', autocompletado: false,
   tipoContrato: '', empresa: '', ingresos: '', egresos: '',
-  tipoVeh: '', marca: '', modelo: '', anio: '',
-  valorComercial: '', cuotaInicial: '', plazo: '', concesionario: '',
-  uploads: {},
+  marca: '', modelo: '', anio: '',
+  valorComercial: '', cuotaInicial: '',
+  plazo: '', aceptaTerminos: false,
 };
 
 // ─── Primitivos de formulario ─────────────────────────────────────────────────
@@ -88,41 +86,6 @@ function Sel({ label, value, onChange, opts, required = false }: {
   );
 }
 
-function UploadZone({ label, state, onUpload }: { label: string; state: UploadSt; onUpload: () => void }) {
-  return (
-    <div
-      onClick={state !== 'done' ? onUpload : undefined}
-      style={{
-        borderRadius: 10, border: `1.5px dashed ${state === 'done' ? C.magenta : C.g200}`,
-        background: state === 'done' ? C.magentaL : C.g50,
-        padding: '14px 16px', display: 'flex', alignItems: 'center',
-        gap: 12, cursor: state !== 'done' ? 'pointer' : 'default', transition: 'all 0.2s',
-      }}
-    >
-      <div style={{
-        width: 36, height: 36, borderRadius: 8,
-        background: state === 'done' ? C.magenta : C.g200,
-        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-      }}>
-        {state === 'done' ? (
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-            <path d="M3 9l5 5 7-7" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        ) : (
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-            <path d="M9 3v10M4 8l5-5 5 5" stroke={C.g500} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M2 15h14" stroke={C.g500} strokeWidth="1.5" strokeLinecap="round" />
-          </svg>
-        )}
-      </div>
-      <div>
-        <div style={{ fontSize: 13, fontWeight: 500, color: state === 'done' ? C.magenta : C.g900 }}>{label}</div>
-        <div style={{ fontSize: 12, color: C.g500 }}>{state === 'done' ? 'Cargado correctamente' : 'Haz clic para adjuntar'}</div>
-      </div>
-    </div>
-  );
-}
-
 // ─── Contenido por sección ────────────────────────────────────────────────────
 
 function FormContent({ section, data, setData, mobile = false }: {
@@ -138,18 +101,12 @@ function FormContent({ section, data, setData, mobile = false }: {
       ? 'Debe tener 10 dígitos' : '';
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <div style={g2}>
-          <Sel label="Tipo de documento" value={data.tipoDoc} required
-            onChange={v => setData(d => ({ ...d, tipoDoc: v }))}
-            opts={['Cédula de ciudadanía', 'Cédula de extranjería', 'NIT', 'Pasaporte']}
-          />
-          <Field label="Número de documento" value={data.numDoc} placeholder="Ej. 1075234891" required
-            onChange={v => {
-              const auto = v === '1075234891';
-              setData(d => ({ ...d, numDoc: v, nombre: auto ? 'Alejandro Torres' : d.nombre, autocompletado: auto }));
-            }}
-          />
-        </div>
+        <Field label="Número de documento" value={data.numDoc} placeholder="Ej. 1075234891" required
+          onChange={v => {
+            const auto = v === '1075234891';
+            setData(d => ({ ...d, numDoc: v, nombre: auto ? 'Alejandro Torres' : d.nombre, autocompletado: auto }));
+          }}
+        />
         {data.autocompletado && (
           <div style={{
             background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 9,
@@ -158,20 +115,18 @@ function FormContent({ section, data, setData, mobile = false }: {
             ✓ Este cliente ya está en nuestra base. Cargamos sus datos. Verifica antes de continuar.
           </div>
         )}
+        <Field label="Nombre completo" value={data.nombre} placeholder="Nombre y apellidos" required
+          onChange={v => setData(d => ({ ...d, nombre: v }))} />
         <div style={g2}>
-          <Field label="Nombre completo" value={data.nombre} placeholder="Nombre y apellidos" required
-            onChange={v => setData(d => ({ ...d, nombre: v }))} />
           <Field label="Fecha de nacimiento" type="date" value={data.fechaNac} required
             onChange={v => setData(d => ({ ...d, fechaNac: v }))} />
-        </div>
-        <div style={g2}>
           <Field label="Correo electrónico" type="email" value={data.correo}
             placeholder="ejemplo@correo.com" required error={correoErr}
             onChange={v => setData(d => ({ ...d, correo: v }))} />
-          <Field label="Celular" value={data.celular} placeholder="3XX XXX XXXX"
-            required error={celErr}
-            onChange={v => setData(d => ({ ...d, celular: v }))} />
         </div>
+        <Field label="Celular" value={data.celular} placeholder="3XX XXX XXXX"
+          required error={celErr}
+          onChange={v => setData(d => ({ ...d, celular: v }))} />
       </div>
     );
   }
@@ -185,7 +140,7 @@ function FormContent({ section, data, setData, mobile = false }: {
         <div style={g2}>
           <Sel label="Tipo de contrato" value={data.tipoContrato} required
             onChange={v => setData(d => ({ ...d, tipoContrato: v }))}
-            opts={['Término indefinido', 'Término fijo', 'Prestación de servicios', 'Independiente']}
+            opts={['Término indefinido', 'Término fijo', 'Prestación de servicios', 'Independiente', 'Pensionado']}
           />
           <Field label="Empresa" value={data.empresa} placeholder="Nombre de la empresa" required
             onChange={v => setData(d => ({ ...d, empresa: v }))} />
@@ -216,25 +171,21 @@ function FormContent({ section, data, setData, mobile = false }: {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div style={g2}>
-          <Sel label="Tipo de vehículo" value={data.tipoVeh} required
-            onChange={v => setData(d => ({ ...d, tipoVeh: v }))} opts={['Nuevo', 'Usado']} />
           <Sel label="Marca" value={data.marca} required
             onChange={v => setData(d => ({ ...d, marca: v }))}
-            opts={['Mazda', 'Toyota', 'Chevrolet', 'Renault', 'KIA', 'Nissan', 'Ford', 'Hyundai']}
+            opts={['Chevrolet', 'Renault', 'Mazda', 'Kia', 'Toyota', 'Volkswagen', 'Otra']}
           />
+          <Field label="Modelo" value={data.modelo} placeholder="Ej. Onix Plus 2024" required
+            onChange={v => setData(d => ({ ...d, modelo: v }))} />
         </div>
         <div style={g2}>
-          <Field label="Modelo" value={data.modelo} placeholder="Ej. CX-5 Grand Touring 2024" required
-            onChange={v => setData(d => ({ ...d, modelo: v }))} />
           <Field label="Año" value={data.anio} placeholder="2024" required
             onChange={v => setData(d => ({ ...d, anio: v }))} />
-        </div>
-        <div style={g2}>
           <Field label="Valor comercial" value={data.valorComercial} placeholder="$138.000.000" required
             onChange={v => setData(d => ({ ...d, valorComercial: v }))} />
-          <Field label="Cuota inicial" value={data.cuotaInicial} placeholder="$27.600.000" required
-            onChange={v => setData(d => ({ ...d, cuotaInicial: v }))} />
         </div>
+        <Field label="Cuota inicial" value={data.cuotaInicial} placeholder="$27.600.000" required
+          onChange={v => setData(d => ({ ...d, cuotaInicial: v }))} />
         {financiar > 0 && (
           <div style={{
             background: C.magentaL, borderRadius: 9, padding: '12px 16px',
@@ -246,43 +197,50 @@ function FormContent({ section, data, setData, mobile = false }: {
             </span>
           </div>
         )}
-        <div style={g2}>
-          <Sel label="Plazo de financiación" value={data.plazo} required
-            onChange={v => setData(d => ({ ...d, plazo: v }))}
-            opts={['12 meses', '24 meses', '36 meses', '48 meses', '60 meses']}
-          />
-          <Sel label="Concesionario" value={data.concesionario} required
-            onChange={v => setData(d => ({ ...d, concesionario: v }))}
-            opts={[
-              'Mazda Colombia — Bogotá Norte',
-              'Mazda Colombia — Bogotá Sur',
-              'Grupo Automotriz Andino',
-              'Motorex S.A.',
-              'Automotores El Cóndor',
-            ]}
-          />
-        </div>
       </div>
     );
   }
 
   if (section === 3) {
-    const docs: Array<[string, string]> = data.autocompletado
-      ? [['Cédula actualizada', 'ced'], ['Documentos del vehículo', 'veh'], ['Cotización del concesionario', 'cot']]
-      : [['Cédula de ciudadanía', 'ced'], ['Certificado laboral', 'cert'], ['Extractos bancarios (3 meses)', 'ext'], ['Documentos del vehículo', 'veh']];
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <p style={{ fontSize: 13, color: C.g700 }}>
-          {data.autocompletado
-            ? 'Cliente existente — solo se requieren documentos actualizados.'
-            : 'Cliente nuevo — se requieren todos los documentos de la lista.'}
-        </p>
-        {docs.map(([label, key]) => (
-          <UploadZone key={key} label={label}
-            state={(data.uploads[key] as UploadSt) ?? 'empty'}
-            onUpload={() => setData(d => ({ ...d, uploads: { ...d.uploads, [key]: 'done' } }))}
-          />
-        ))}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <Sel label="Plazo de financiación" value={data.plazo} required
+          onChange={v => setData(d => ({ ...d, plazo: v }))}
+          opts={['12 meses', '24 meses', '36 meses', '48 meses', '60 meses', '72 meses']}
+        />
+        <div style={{
+          background: C.g50, borderRadius: 10, padding: '14px 16px',
+          border: `1px solid ${C.g200}`,
+        }}>
+          <p style={{ fontSize: 13, color: C.g500, margin: 0, lineHeight: 1.6 }}>
+            Los documentos físicos se radican en el concesionario con el asesor.
+          </p>
+        </div>
+        <div
+          onClick={() => setData(d => ({ ...d, aceptaTerminos: !d.aceptaTerminos }))}
+          style={{ display: 'flex', gap: 12, alignItems: 'flex-start', cursor: 'pointer' }}
+        >
+          <div style={{
+            width: 20, height: 20, borderRadius: 5, flexShrink: 0, marginTop: 2,
+            border: `2px solid ${data.aceptaTerminos ? C.magenta : C.g200}`,
+            background: data.aceptaTerminos ? C.magenta : C.white,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'all 0.15s',
+          }}>
+            {data.aceptaTerminos && (
+              <svg width="11" height="8" viewBox="0 0 11 8" fill="none">
+                <path d="M1 4l3 3 6-6" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            )}
+          </div>
+          <span style={{ fontSize: 13, color: C.g700, lineHeight: 1.6 }}>
+            Acepto los{' '}
+            <span style={{ color: C.magenta, textDecoration: 'underline', cursor: 'pointer' }}>
+              términos y condiciones
+            </span>
+            {' '}de Finandina para el tratamiento de datos y la solicitud de crédito.
+          </span>
+        </div>
       </div>
     );
   }
@@ -349,16 +307,13 @@ export default function ClienteRadicar() {
   const [loading, setLoading] = useState(false);
   const [successId, setSuccessId] = useState<string | null>(null);
 
-  const requiredDocs = data.autocompletado ? 3 : 4;
-  const uploadedCount = Object.values(data.uploads).filter(v => v === 'done').length;
-
   const sectionFill = [
-    !!(data.tipoDoc && data.numDoc && data.nombre && data.correo && data.celular
+    !!(data.numDoc && data.nombre && data.correo && data.celular
       && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.correo)
       && data.celular.replace(/\D/g, '').length === 10),
     !!(data.tipoContrato && data.empresa && data.ingresos && data.egresos),
-    !!(data.marca && data.modelo && data.anio && data.valorComercial && data.cuotaInicial && data.plazo && data.concesionario),
-    uploadedCount >= requiredDocs,
+    !!(data.marca && data.modelo && data.anio && data.valorComercial && data.cuotaInicial),
+    !!(data.plazo && data.aceptaTerminos),
   ];
   const pct = Math.round(sectionFill.filter(Boolean).length / 4 * 100);
   const allFilled = sectionFill.every(Boolean);
@@ -366,7 +321,6 @@ export default function ClienteRadicar() {
   async function handleRadicar() {
     setLoading(true);
     try {
-      const plazoNum = parseInt(data.plazo.replace(/\D/g, ''));
       const body = {
         flujo: 'nuevo' as const,
         origen: 'concesionario' as const,
@@ -374,8 +328,8 @@ export default function ClienteRadicar() {
         cedula: data.numDoc,
         vehiculo: `${data.marca} ${data.modelo} ${data.anio}`,
         monto: parseInt(data.valorComercial.replace(/\D/g, '')),
-        plazoMeses: plazoNum,
-        tipo: (data.tipoVeh || 'Nuevo') as 'Nuevo' | 'Usado',
+        plazoMeses: parseInt(data.plazo),
+        tipo: 'Nuevo' as const,
       };
       const res = await fetch('/api/solicitudes', {
         method: 'POST',
@@ -423,29 +377,31 @@ export default function ClienteRadicar() {
         background: '#F5F4F2',
       }}>
         <div style={{
-          width: 72, height: 72, borderRadius: '50%',
-          background: C.magentaL, border: `2px solid ${C.magenta}`,
+          width: 64, height: 64, borderRadius: '50%',
+          background: C.successL,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-            <path d="M6 16l8 8 12-12" stroke={C.magenta} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+            <path d="M5 14l7 7 11-11" stroke={C.success} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <h2 style={{ fontSize: 22, fontWeight: 700, color: C.g900, marginBottom: 8 }}>Solicitud radicada</h2>
-          <p style={{ fontSize: 14, color: C.g700 }}>
+          <h2 style={{ fontSize: 22, fontWeight: 700, color: C.g900, marginBottom: 8 }}>
+            ✓ Solicitud radicada exitosamente
+          </h2>
+          <p style={{ fontSize: 14, color: C.g700, marginBottom: 6 }}>
             Número de solicitud: <strong>{successId}</strong>
           </p>
-          <p style={{ fontSize: 13, color: C.g500, marginTop: 6 }}>
-            El analista de crédito recibirá la solicitud para su evaluación.
+          <p style={{ fontSize: 13, color: C.g500 }}>
+            El equipo de Finandina te contactará en las próximas 2 horas.
           </p>
         </div>
         <button
           onClick={resetForm}
           style={{
-            padding: '12px 28px', borderRadius: 9, background: C.magenta,
-            color: '#fff', fontSize: 14, fontWeight: 600,
-            border: 'none', cursor: 'pointer', fontFamily: 'Roboto',
+            padding: '12px 28px', borderRadius: 9, background: C.g50,
+            color: C.g700, fontSize: 14, fontWeight: 500,
+            border: `1px solid ${C.g200}`, cursor: 'pointer', fontFamily: 'Roboto',
           }}
         >
           Radicar otra solicitud
@@ -540,7 +496,7 @@ export default function ClienteRadicar() {
     </div>
   );
 
-  // ── Modal de confirmación (con checkbox) ──────────────────────────────────
+  // ── Modal de confirmación ─────────────────────────────────────────────────
   const confirmModal = modal && (
     <div
       onClick={() => setModal(false)}
@@ -565,6 +521,7 @@ export default function ClienteRadicar() {
           ['Cliente', data.nombre],
           ['Vehículo', `${data.marca} ${data.modelo} ${data.anio}`],
           ['Monto a financiar', `$${(parseInt(data.valorComercial.replace(/\D/g, '') || '0') - parseInt(data.cuotaInicial.replace(/\D/g, '') || '0')).toLocaleString('es-CO')}`],
+          ['Plazo', data.plazo],
         ] as Array<[string, string]>).map(([l, v]) => (
           <div key={l} style={{
             display: 'flex', justifyContent: 'space-between',

@@ -17,12 +17,6 @@ interface NavBarProps {
   extra?: React.ReactNode;
 }
 
-const ROLE_LABELS: Record<Role, string> = {
-  cliente:     'Cliente',
-  analista:    'Analista de Crédito',
-  coordinador: 'Coordinador',
-};
-
 const ROLE_INITIALS: Record<Role, string> = {
   cliente:     'CL',
   analista:    'AN',
@@ -67,20 +61,18 @@ export default function NavBar({ activeLabel, rol, tabs = [], onLogout, extra }:
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
         <div style={{
           width: 32, height: 32, borderRadius: '50%',
-          background: rol === 'coordinador' ? C.magenta : C.g900,
+          background: C.g900,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: '#fff', fontSize: 13, fontWeight: 600,
+          color: '#fff', fontSize: 12, fontWeight: 600, flexShrink: 0,
         }}>
           {ROLE_INITIALS[rol]}
         </div>
 
         {rol === 'coordinador' ? (
-          <span style={{
-            fontSize: 11, fontWeight: 600, background: C.blueL, color: C.blue,
-            borderRadius: 5, padding: '3px 8px', border: `1px solid ${C.blue}30`,
-          }}>
-            Coordinador
-          </span>
+          <div style={{ fontSize: 13 }}>
+            <div style={{ fontWeight: 500, color: C.g900, lineHeight: 1.2 }}>Coordinador</div>
+            <div style={{ fontSize: 11, color: C.g500 }}>Coordinador de Crédito</div>
+          </div>
         ) : rol === 'analista' ? (
           <span style={{
             fontSize: 11, fontWeight: 600, background: C.successL, color: C.success,
@@ -90,25 +82,23 @@ export default function NavBar({ activeLabel, rol, tabs = [], onLogout, extra }:
           </span>
         ) : (
           <div style={{ fontSize: 13 }}>
-            <div style={{ fontWeight: 500, color: C.g900 }}>{ROLE_LABELS[rol]}</div>
+            <div style={{ fontWeight: 500, color: C.g900 }}>Cliente</div>
           </div>
         )}
 
         {onLogout && (
           <button
             onClick={onLogout}
-            title="Cerrar sesión"
             style={{
-              marginLeft: 4, fontSize: 12, color: C.g500,
-              background: 'none', border: `1px solid ${C.g200}`,
-              borderRadius: 7, padding: '5px 10px', cursor: 'pointer',
-              fontFamily: 'Roboto', display: 'flex', alignItems: 'center', gap: 4,
+              display: 'flex', alignItems: 'center', gap: 5,
+              background: 'transparent', border: 'none', cursor: 'pointer',
+              color: C.g500, fontSize: 13, padding: '6px 4px', borderRadius: 6,
+              fontFamily: 'Roboto',
             }}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-              <polyline points="16 17 21 12 16 7"/>
-              <line x1="21" y1="12" x2="9" y2="12"/>
+            <svg width={15} height={15} viewBox="0 0 16 16" fill="none">
+              <path d="M6 14H3a1 1 0 01-1-1V3a1 1 0 011-1h3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              <path d="M10 11l3-3-3-3M13 8H6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             Salir
           </button>
