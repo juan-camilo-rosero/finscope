@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Finscope — P9 Excepción</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet"/>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script src="ios-frame.jsx" type="text/babel"></script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Roboto',sans-serif;background:#F5F4F2;}
+    ::-webkit-scrollbar{width:5px;} ::-webkit-scrollbar-thumb{background:#DEDBD7;border-radius:3px;}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+  </style>
+</head>
+<body><div id="root"></div>
+<script type="text/babel">
+const { useState } = React;
+const C = {magenta:'#ee252a',magentaL:'rgba(238,37,42,0.08)',blue:'#3f5cdd',g900:'#212121',g700:'#616161',g500:'#9E9E9E',g200:'#EEEEEE',g50:'#FAFAFA',white:'#FFFFFF'};
+
+const VARIANTES = {
+  A:{
+    titulo:'Esta oferta ya no está vigente.',
+    subtitulo:'La oferta que habíamos preparado para ti estuvo disponible hasta el 15/04/2026.',
+    micro:'Podemos revisar tu perfil hoy y prepararte una oferta actualizada.',
+    cta:'Solicitar oferta actualizada',
+    ctaColor:C.magenta,
+    icon:'⏰',
+    secondario:'Hablar con un ejecutivo',
+  },
+  B:{
+    titulo:'Ya activaste esta oferta.',
+    subtitulo:'Activaste esta oferta el 28 abr 2026. Tu solicitud está en análisis crediticio.',
+    micro:'Puedes ver el estado actual de tu trámite o contactar a tu ejecutivo.',
+    cta:'Ver estado de mi solicitud',
+    ctaColor:C.magenta,
+    icon:'✓',
+    secondario:'Hablar con un ejecutivo',
+  },
+  C:{
+    titulo:'Por ahora, esta oferta no está disponible.',
+    subtitulo:'Tu perfil aún está siendo evaluado y te contactaremos cuando tengamos una oferta lista para ti.',
+    micro:'No necesitas hacer nada — te escribiremos en cuanto haya novedades.',
+    cta:'Quiero que me contacten',
+    ctaColor:C.blue,
+    icon:'⏳',
+    secondario:'Hablar con un ejecutivo',
+  },
+};
+
+function Logo(){
+  return(
+    <div style={{display:'flex',alignItems:'center',gap:8}}>
+      <div style={{background:'#fff',borderRadius:7,padding:3,boxShadow:'0 1px 4px rgba(0,0,0,0.10)',display:'flex'}}>
+        <img src="uploads/imagen.png" width={22} height={22} alt="Finscope" style={{display:'block'}}/>
+      </div>
+      <span style={{fontWeight:700,fontSize:16,color:C.g900,letterSpacing:'-0.4px'}}>Finscope</span>
+    </div>
+  );
+}
+
+function NavBar({device,setDevice}){
+  const pages=[{label:'P1–P2',href:'Finscope Prototype.html'},{label:'P3',href:'Finscope P3 - Analista.html'},{label:'P4',href:'Finscope P4 - Coordinador.html'},{label:'P5',href:'Finscope P5 - Ejecutivo.html'},{label:'P6',href:'Finscope P6 - Ejecutivo Dashboard.html'},{label:'P7',href:'Finscope P7 - Operativo.html'},{label:'P8',href:'Finscope P8 - Desembolso.html'},{label:'P9 Excepción',href:'Finscope P9 - Excepcion.html',active:true}];
+  return(<div style={{height:52,background:C.white,borderBottom:`1px solid ${C.g200}`,display:'flex',alignItems:'center',padding:'0 16px',gap:16,position:'fixed',top:0,left:0,right:0,zIndex:100}}>
+    <Logo/>
+    <div style={{display:'flex',gap:0,height:'100%',alignItems:'center',flex:1}}>
+      {pages.map(p=><a key={p.label} href={p.href} style={{padding:'0 10px',height:'100%',display:'flex',alignItems:'center',fontSize:12,fontWeight:p.active?600:400,color:p.active?C.magenta:C.g700,borderBottom:p.active?`2px solid ${C.magenta}`:'2px solid transparent',textDecoration:'none',whiteSpace:'nowrap'}}>{p.label}</a>)}
+    </div>
+    <button onClick={()=>setDevice(d=>d==='desktop'?'mobile':'desktop')} style={{flexShrink:0,background:C.g50,border:`1px solid ${C.g200}`,borderRadius:8,padding:'6px 12px',fontSize:12,color:C.g700,cursor:'pointer',fontFamily:'Roboto'}}>{device==='desktop'?'📱 Móvil':'🖥 Desktop'}</button>
+  </div>);
+}
+
+/* Illustration placeholder — monocroma neutra */
+function Illustration({variant}){
+  const icons={A:'⏰',B:'✓',C:'⏳'};
+  const colors={A:'#FFAE00',B:'#22c55e',C:C.blue};
+  return(
+    <div style={{width:120,height:120,borderRadius:'50%',background:`${colors[variant]}18`,border:`2px solid ${colors[variant]}30`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:44,margin:'0 auto',animation:'fadeIn 0.5s ease'}}>
+      {icons[variant]}
+    </div>
+  );
+}
+
+function RecontactoForm(){
+  const [cel,setCel]=useState('');const [franja,setFranja]=useState('');const [sent,setSent]=useState(false);
+  if(sent) return <div style={{background:'#f0fdf4',border:'1px solid #86efac',borderRadius:12,padding:'14px 16px',fontSize:14,color:'#166534',textAlign:'center',animation:'fadeIn 0.3s ease'}}>✓ Te contactaremos pronto.</div>;
+  return(
+    <div style={{display:'flex',flexDirection:'column',gap:10}}>
+      <input value={cel} onChange={e=>setCel(e.target.value)} placeholder="Celular de contacto" style={{padding:'11px 14px',borderRadius:10,border:`1px solid ${C.g200}`,fontSize:14,fontFamily:'Roboto',outline:'none'}}/>
+      <select value={franja} onChange={e=>setFranja(e.target.value)} style={{padding:'11px 14px',borderRadius:10,border:`1px solid ${C.g200}`,fontSize:14,fontFamily:'Roboto',color:franja?C.g900:C.g500,outline:'none'}}>
+        <option value="">Franja horaria preferida</option>
+        <option>Mañana (8 am – 12 pm)</option>
+        <option>Tarde (12 pm – 5 pm)</option>
+        <option>Noche (5 pm – 8 pm)</option>
+      </select>
+      <button onClick={()=>{if(cel&&franja)setSent(true);}} style={{padding:'12px',borderRadius:10,background:cel&&franja?C.blue:C.g200,color:cel&&franja?'#fff':C.g500,fontSize:14,fontWeight:600,border:'none',cursor:cel&&franja?'pointer':'not-allowed',fontFamily:'Roboto'}}>Enviar</button>
+    </div>
+  );
+}
+
+function Screen({variant,mobile=false}){
+  const v=VARIANTES[variant];
+  const [showForm,setShowForm]=useState(false);
+  return(
+    <div style={{background:C.white,minHeight:'100%',display:'flex',flexDirection:'column',paddingBottom:40}}>
+      {/* Header */}
+      <div style={{padding:mobile?'68px 20px 16px':'24px 32px 16px',borderBottom:`1px solid ${C.g200}`,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <Logo/>
+        <span style={{fontSize:12,color:C.g500}}>app.finscope.co</span>
+      </div>
+      {/* Body */}
+      <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:mobile?'40px 24px':'60px 48px',textAlign:'center',gap:0,animation:'fadeIn 0.4s ease'}}>
+        <Illustration variant={variant}/>
+        <div style={{marginTop:28,marginBottom:0}}>
+          <h1 style={{fontSize:mobile?22:28,fontWeight:700,color:C.g900,lineHeight:1.2,marginBottom:10}}>{v.titulo}</h1>
+          <p style={{fontSize:mobile?14:15,color:C.g700,lineHeight:1.7,marginBottom:8,maxWidth:400,margin:'0 auto 10px'}}>{v.subtitulo}</p>
+          <p style={{fontSize:13,color:C.g500,lineHeight:1.6,maxWidth:360,margin:'0 auto'}}>{v.micro}</p>
+        </div>
+        <div style={{marginTop:32,width:'100%',maxWidth:340,display:'flex',flexDirection:'column',gap:12}}>
+          {variant==='C'&&showForm
+            ?<RecontactoForm/>
+            :<button onClick={()=>variant==='C'?setShowForm(true):null} style={{padding:'13px 24px',borderRadius:12,background:v.ctaColor,color:'#fff',fontSize:15,fontWeight:600,border:'none',cursor:'pointer',boxShadow:`0 4px 14px ${v.ctaColor}44`}}>{v.cta}</button>}
+          <button style={{padding:'11px',borderRadius:12,background:'transparent',color:C.g700,fontSize:14,border:`1px solid ${C.g200}`,cursor:'pointer'}}>Hablar con un ejecutivo</button>
+        </div>
+      </div>
+      {/* Footer legal */}
+      <div style={{padding:'14px 24px',textAlign:'center',borderTop:`1px solid ${C.g200}`}}>
+        <span style={{fontSize:12,color:C.blue,textDecoration:'underline',cursor:'pointer'}}>Tratamiento de datos personales</span>
+        <span style={{fontSize:12,color:C.g500,margin:'0 8px'}}>·</span>
+        <span style={{fontSize:12,color:C.g500}}>Banco Finandina S.A.</span>
+      </div>
+    </div>
+  );
+}
+
+function App(){
+  const [device,setDevice]=useState('desktop');
+  const [variant,setVariant]=useState('A');
+  return(
+    <>
+      <NavBar device={device} setDevice={setDevice}/>
+      <div style={{marginTop:52,padding:'16px 20px',background:'#EDECEA',display:'flex',alignItems:'center',gap:10,flexWrap:'wrap',justifyContent:'center',borderBottom:`1px solid ${C.g200}`}}>
+        <span style={{fontSize:12,color:'#7a7874',fontWeight:500}}>Variante:</span>
+        {[['A','A — Oferta expirada'],['B','B — Ya activada'],['C','C — No elegible']].map(([v,l])=>(
+          <button key={v} onClick={()=>setVariant(v)} style={{padding:'5px 14px',borderRadius:20,fontSize:12,border:`1px solid ${variant===v?C.magenta:C.g200}`,background:variant===v?C.magentaL:C.white,color:variant===v?C.magenta:C.g700,cursor:'pointer',fontFamily:'Roboto',fontWeight:variant===v?600:400}}>{l}</button>
+        ))}
+        <span style={{fontSize:12,color:C.g500}}>·</span>
+        <button onClick={()=>setDevice(d=>d==='desktop'?'mobile':'desktop')} style={{padding:'5px 14px',borderRadius:20,fontSize:12,border:`1px solid ${C.g200}`,background:C.white,color:C.g700,cursor:'pointer',fontFamily:'Roboto'}}>
+          {device==='desktop'?'📱 Móvil':'🖥 Desktop'}
+        </button>
+      </div>
+
+      {device==='desktop'
+        /* Desktop: browser chrome */
+        ?<div style={{display:'flex',justifyContent:'center',alignItems:'flex-start',padding:'32px',minHeight:'calc(100vh - 104px)',background:'#EDECEA',overflowY:'auto'}}>
+           <div style={{width:'100%',maxWidth:560,background:C.white,borderRadius:16,overflow:'hidden',boxShadow:'0 8px 40px rgba(0,0,0,0.12)',border:`1px solid ${C.g200}`}}>
+             {/* Browser bar */}
+             <div style={{background:'#3A3A3C',padding:'8px 14px',display:'flex',alignItems:'center',gap:10}}>
+               <div style={{display:'flex',gap:5}}>{['#FF5F57','#FFBD2E','#28C840'].map(c=><div key={c} style={{width:10,height:10,borderRadius:'50%',background:c}}/>)}</div>
+               <div style={{flex:1,background:'#2C2C2E',borderRadius:6,padding:'4px 12px',fontSize:11,color:'#8E8E93',textAlign:'center'}}>app.finscope.co/oferta/excepcion</div>
+             </div>
+             <Screen variant={variant}/>
+           </div>
+         </div>
+        /* Mobile: iPhone frame */
+        :<div style={{display:'flex',justifyContent:'center',alignItems:'flex-start',padding:'32px',minHeight:'calc(100vh - 104px)',background:'#EDECEA',overflowY:'auto'}}>
+           <IOSDevice width={375} height={812} dark={false}>
+             <Screen variant={variant} mobile/>
+           </IOSDevice>
+         </div>}
+    </>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

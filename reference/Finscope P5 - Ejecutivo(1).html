@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Finscope — P5 Formulario Ejecutivo</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Roboto',sans-serif;background:#F5F4F2;}
+    ::-webkit-scrollbar{width:5px;} ::-webkit-scrollbar-thumb{background:#DEDBD7;border-radius:3px;}
+    input,select,textarea{font-family:'Roboto',sans-serif;}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect } = React;
+const C = { magenta:'#ee252a', magentaL:'rgba(238,37,42,0.08)', yellow:'#FFAE00', blue:'#3f5cdd', g900:'#212121', g700:'#616161', g500:'#9E9E9E', g200:'#EEEEEE', g50:'#FAFAFA', white:'#FFFFFF' };
+
+function Logo() {
+  return (
+    <div style={{display:'flex',alignItems:'center',gap:8}}>
+      <div style={{background:'#fff',borderRadius:7,padding:3,boxShadow:'0 1px 4px rgba(0,0,0,0.10)',display:'flex'}}>
+        <img src="uploads/imagen.png" width={26} height={26} alt="Finscope" style={{display:'block'}} />
+      </div>
+      <span style={{fontWeight:700,fontSize:17,color:C.g900,letterSpacing:'-0.4px'}}>Finscope</span>
+    </div>
+  );
+}
+
+function NavBar({ device, setDevice }) {
+  const pages=[{label:'P1+P2 Cliente',href:'Finscope Prototype.html'},{label:'P3 Analista',href:'Finscope P3 - Analista.html'},{label:'P4 Coordinador',href:'Finscope P4 - Coordinador.html'},{label:'P5 Ejecutivo',href:'Finscope P5 - Ejecutivo.html',active:true}];
+  return (
+    <div style={{height:52,background:C.white,borderBottom:`1px solid ${C.g200}`,display:'flex',alignItems:'center',padding:'0 20px',gap:20,position:'fixed',top:0,left:0,right:0,zIndex:100}}>
+      <Logo />
+      <div style={{display:'flex',gap:2,height:'100%',alignItems:'center',flex:1}}>
+        {pages.map(p=><a key={p.label} href={p.href} style={{padding:'0 12px',height:'100%',display:'flex',alignItems:'center',fontSize:13,fontWeight:p.active?600:400,color:p.active?C.magenta:C.g700,borderBottom:p.active?`2px solid ${C.magenta}`:'2px solid transparent',textDecoration:'none'}}>{p.label}</a>)}
+      </div>
+      <button onClick={()=>setDevice(d=>d==='desktop'?'mobile':'desktop')} style={{display:'flex',alignItems:'center',gap:6,background:C.g50,border:`1px solid ${C.g200}`,borderRadius:8,padding:'6px 12px',fontSize:12,color:C.g700,cursor:'pointer',fontFamily:'Roboto'}}>
+        {device==='desktop'?'📱 Móvil':'🖥 Desktop'}
+      </button>
+      <div style={{display:'flex',alignItems:'center',gap:10}}>
+        <div style={{width:32,height:32,borderRadius:'50%',background:'#22c55e',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:13,fontWeight:600}}>JR</div>
+        <div style={{fontSize:13}}><div style={{fontWeight:500,color:C.g900}}>Juliana Ríos</div><div style={{fontSize:11,color:C.g500}}>Ejecutiva Comercial</div></div>
+      </div>
+    </div>
+  );
+}
+
+function Field({ label, type='text', value, onChange, placeholder='', error='', hint='', required=false }) {
+  return (
+    <div style={{display:'flex',flexDirection:'column',gap:5}}>
+      <label style={{fontSize:13,fontWeight:500,color:C.g700}}>{label}{required&&<span style={{color:C.magenta}}> *</span>}</label>
+      <input type={type} value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder}
+        style={{padding:'10px 12px',borderRadius:9,border:`1px solid ${error?'#ef4444':C.g200}`,fontSize:14,color:C.g900,outline:'none',background:C.white,transition:'border 0.15s'}}
+        onFocus={e=>e.target.style.borderColor=error?'#ef4444':C.magenta}
+        onBlur={e=>e.target.style.borderColor=error?'#ef4444':C.g200}
+      />
+      {error&&<span style={{fontSize:12,color:'#ef4444'}}>{error}</span>}
+      {hint&&!error&&<span style={{fontSize:12,color:C.g500}}>{hint}</span>}
+    </div>
+  );
+}
+
+function Select({ label, value, onChange, options, required=false }) {
+  return (
+    <div style={{display:'flex',flexDirection:'column',gap:5}}>
+      <label style={{fontSize:13,fontWeight:500,color:C.g700}}>{label}{required&&<span style={{color:C.magenta}}> *</span>}</label>
+      <select value={value} onChange={e=>onChange(e.target.value)} style={{padding:'10px 12px',borderRadius:9,border:`1px solid ${C.g200}`,fontSize:14,color:value?C.g900:C.g500,background:C.white,outline:'none',cursor:'pointer'}}>
+        <option value="">Seleccionar...</option>
+        {options.map(o=><option key={o} value={o}>{o}</option>)}
+      </select>
+    </div>
+  );
+}
+
+function UploadZone({ label, state, onUpload }) {
+  return (
+    <div onClick={state!=='done'?onUpload:undefined} style={{borderRadius:10,border:`1.5px dashed ${state==='done'?C.magenta:C.g200}`,background:state==='done'?C.magentaL:C.g50,padding:'14px 16px',display:'flex',alignItems:'center',gap:12,cursor:state!=='done'?'pointer':'default',transition:'all 0.2s'}}>
+      {state==='empty'&&<div style={{width:36,height:36,borderRadius:8,background:C.g200,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 3v10M4 8l5-5 5 5" stroke={C.g500} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M2 15h14" stroke={C.g500} strokeWidth="1.5" strokeLinecap="round"/></svg>
+      </div>}
+      {state==='done'&&<div style={{width:36,height:36,borderRadius:8,background:C.magenta,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 9l5 5 7-7" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      </div>}
+      <div>
+        <div style={{fontSize:13,fontWeight:500,color:state==='done'?C.magenta:C.g900}}>{label}</div>
+        <div style={{fontSize:12,color:C.g500}}>{state==='done'?'Cargado correctamente':'Haz clic para adjuntar'}</div>
+      </div>
+    </div>
+  );
+}
+
+const SECTIONS = ['Datos del cliente','Datos laborales y financieros','Datos del vehículo','Documentos'];
+
+function FormContent({ section, data, setData, mobile=false }) {
+  const grid2 = {display:'grid',gridTemplateColumns:mobile?'1fr':'1fr 1fr',gap:16};
+
+  if(section===0) return (
+    <div style={{display:'flex',flexDirection:'column',gap:16}}>
+      <div style={grid2}>
+        <Select label="Tipo de documento" value={data.tipoDoc} onChange={v=>setData(d=>({...d,tipoDoc:v}))} options={['Cédula de ciudadanía','Cédula de extranjería','NIT','Pasaporte']} required />
+        <Field label="Número de documento" value={data.numDoc} onChange={v=>{setData(d=>({...d,numDoc:v,nombre:v==='1075234891'?'Alejandro Torres':'',autocompletado:v==='1075234891'}));}} placeholder="Ej. 1075234891" required />
+      </div>
+      {data.autocompletado&&<div style={{background:'#f0fdf4',border:'1px solid #86efac',borderRadius:9,padding:'10px 14px',fontSize:13,color:'#166534',animation:'fadeIn 0.3s ease'}}>
+        ✓ Este cliente ya está en nuestra base. Cargamos sus datos. Verifica antes de continuar.
+      </div>}
+      <div style={grid2}>
+        <Field label="Nombre completo" value={data.nombre} onChange={v=>setData(d=>({...d,nombre:v}))} placeholder="Nombre y apellidos" required />
+        <Field label="Fecha de nacimiento" type="date" value={data.fechaNac} onChange={v=>setData(d=>({...d,fechaNac:v}))} required />
+      </div>
+      <div style={grid2}>
+        <Field label="Correo electrónico" type="email" value={data.correo} onChange={v=>setData(d=>({...d,correo:v}))} placeholder="ejemplo@correo.com" required error={data.correo&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.correo)?'Correo inválido':''} />
+        <Field label="Celular" value={data.celular} onChange={v=>setData(d=>({...d,celular:v}))} placeholder="3XX XXX XXXX" required error={data.celular&&data.celular.replace(/\D/g,'').length!==10&&data.celular.length>0?'Debe tener 10 dígitos':''} />
+      </div>
+    </div>
+  );
+
+  if(section===1) {
+    const ingresosN = parseInt(data.ingresos?.replace(/\D/g,''))||0;
+    const egresosN = parseInt(data.egresos?.replace(/\D/g,''))||0;
+    const capacidad = ingresosN - egresosN;
+    const ajustada = ingresosN>0 && capacidad < 3000000;
+    return (
+      <div style={{display:'flex',flexDirection:'column',gap:16}}>
+        <div style={grid2}>
+          <Select label="Tipo de contrato" value={data.tipoContrato} onChange={v=>setData(d=>({...d,tipoContrato:v}))} options={['Término indefinido','Término fijo','Prestación de servicios','Independiente']} required />
+          <Field label="Empresa" value={data.empresa} onChange={v=>setData(d=>({...d,empresa:v}))} placeholder="Nombre de la empresa" required />
+        </div>
+        <div style={grid2}>
+          <Field label="Ingresos mensuales" value={data.ingresos} onChange={v=>setData(d=>({...d,ingresos:v}))} placeholder="$0" hint="Antes de deducciones" required />
+          <Field label="Egresos fijos mensuales" value={data.egresos} onChange={v=>setData(d=>({...d,egresos:v}))} placeholder="$0" required />
+        </div>
+        {ajustada&&<div style={{background:'#fffbeb',border:'1px solid #fcd34d',borderRadius:9,padding:'10px 14px',fontSize:13,color:'#92400e'}}>
+          ⚠️ La capacidad de pago parece ajustada. Puedes continuar, pero el análisis tomará más tiempo.
+        </div>}
+      </div>
+    );
+  }
+
+  if(section===2) {
+    const valor = parseInt(data.valorComercial?.replace(/\D/g,''))||0;
+    const inicial = parseInt(data.cuotaInicial?.replace(/\D/g,''))||0;
+    const financiar = valor - inicial;
+    return (
+      <div style={{display:'flex',flexDirection:'column',gap:16}}>
+        <div style={grid2}>
+          <Select label="Tipo de vehículo" value={data.tipoVeh} onChange={v=>setData(d=>({...d,tipoVeh:v}))} options={['Nuevo','Usado']} required />
+          <Select label="Marca" value={data.marca} onChange={v=>setData(d=>({...d,marca:v}))} options={['Mazda','Toyota','Chevrolet','Renault','KIA','Nissan','Ford','Hyundai']} required />
+        </div>
+        <div style={grid2}>
+          <Field label="Modelo" value={data.modelo} onChange={v=>setData(d=>({...d,modelo:v}))} placeholder="Ej. CX-5 Grand Touring 2024" required />
+          <Field label="Año" value={data.anio} onChange={v=>setData(d=>({...d,anio:v}))} placeholder="2024" required />
+        </div>
+        <div style={grid2}>
+          <Field label="Valor comercial" value={data.valorComercial} onChange={v=>setData(d=>({...d,valorComercial:v}))} placeholder="$138.000.000" required />
+          <Field label="Cuota inicial" value={data.cuotaInicial} onChange={v=>setData(d=>({...d,cuotaInicial:v}))} placeholder="$27.600.000" required />
+        </div>
+        {financiar>0&&<div style={{background:C.magentaL,borderRadius:9,padding:'12px 16px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+          <span style={{fontSize:13,color:C.g700}}>Monto a financiar</span>
+          <span style={{fontSize:18,fontWeight:700,color:C.magenta}}>${financiar.toLocaleString('es-CO')}</span>
+        </div>}
+        <Select label="Concesionario" value={data.concesionario} onChange={v=>setData(d=>({...d,concesionario:v}))} options={['Mazda Colombia — Bogotá Norte','Mazda Colombia — Bogotá Sur','Grupo Automotriz Andino','Motorex S.A.','Automotores El Cóndor']} required />
+      </div>
+    );
+  }
+
+  if(section===3) {
+    const docs = data.autocompletado
+      ? [['Cédula actualizada','ced'],['Documentos del vehículo','veh'],['Cotización del concesionario','cot']]
+      : [['Cédula de ciudadanía','ced'],['Certificado laboral','cert'],['Extractos bancarios (3 meses)','ext'],['Documentos del vehículo','veh']];
+    return (
+      <div style={{display:'flex',flexDirection:'column',gap:12}}>
+        <p style={{fontSize:13,color:C.g700}}>
+          {data.autocompletado ? 'Cliente existente — solo se requieren documentos actualizados.' : 'Cliente nuevo — se requieren todos los documentos de la lista.'}
+        </p>
+        {docs.map(([label,key])=>(
+          <UploadZone key={key} label={label} state={data.uploads?.[key]||'empty'} onUpload={()=>setData(d=>({...d,uploads:{...(d.uploads||{}), [key]:'done'}}))} />
+        ))}
+      </div>
+    );
+  }
+  return null;
+}
+
+function SideCard({ data }) {
+  const valor = parseInt(data.valorComercial?.replace(/\D/g,'')||0);
+  const inicial = parseInt(data.cuotaInicial?.replace(/\D/g,'')||0);
+  const financiar = valor - inicial;
+  return (
+    <div style={{width:260,flexShrink:0,display:'flex',flexDirection:'column',gap:12}}>
+      <div style={{background:C.white,borderRadius:14,padding:18,border:`1px solid ${C.g200}`,boxShadow:`0 2px 8px rgba(0,0,0,0.04)`}}>
+        <p style={{fontSize:12,fontWeight:600,color:C.g500,textTransform:'uppercase',letterSpacing:'0.7px',marginBottom:14}}>Resumen de la solicitud</p>
+        {[
+          ['Cliente', data.nombre||'—'],
+          ['Vehículo', data.marca&&data.modelo?`${data.marca} ${data.modelo}`:'—'],
+          ['Valor comercial', valor?`$${valor.toLocaleString('es-CO')}`:'—'],
+          ['Cuota inicial', inicial?`$${inicial.toLocaleString('es-CO')}`:'—'],
+          ['Monto a financiar', financiar>0?`$${financiar.toLocaleString('es-CO')}`:'—'],
+        ].map(([l,v])=>(
+          <div key={l} style={{display:'flex',justifyContent:'space-between',padding:'7px 0',borderBottom:`1px solid ${C.g200}`,fontSize:13}}>
+            <span style={{color:C.g500}}>{l}</span>
+            <span style={{color:C.g900,fontWeight:500,textAlign:'right',maxWidth:130,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{v}</span>
+          </div>
+        ))}
+        {financiar>0&&<div style={{marginTop:12,background:C.magentaL,borderRadius:8,padding:'10px 12px',textAlign:'center'}}>
+          <div style={{fontSize:11,color:C.g500}}>Monto a financiar</div>
+          <div style={{fontSize:20,fontWeight:700,color:C.magenta}}>${financiar.toLocaleString('es-CO')}</div>
+        </div>}
+      </div>
+    </div>
+  );
+}
+
+function DesktopForm() {
+  const [section, setSection] = useState(0);
+  const [data, setData] = useState({ tipoDoc:'', numDoc:'', nombre:'', fechaNac:'', correo:'', celular:'', autocompletado:false, tipoContrato:'', empresa:'', ingresos:'', egresos:'', tipoVeh:'', marca:'', modelo:'', anio:'', valorComercial:'', cuotaInicial:'', concesionario:'', uploads:{} });
+  const [modal, setModal] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
+
+  const sectionFill = [
+    data.tipoDoc&&data.numDoc&&data.nombre&&data.correo&&data.celular,
+    data.tipoContrato&&data.empresa&&data.ingresos&&data.egresos,
+    data.marca&&data.modelo&&data.valorComercial&&data.cuotaInicial&&data.concesionario,
+    Object.keys(data.uploads||{}).length >= (data.autocompletado?3:4),
+  ];
+  const pct = Math.round(sectionFill.filter(Boolean).length / 4 * 100);
+
+  if(success) return (
+    <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',height:'calc(100vh - 52px)',gap:20,animation:'fadeIn 0.4s ease'}}>
+      <div style={{width:72,height:72,borderRadius:'50%',background:C.magentaL,border:`2px solid ${C.magenta}`,display:'flex',alignItems:'center',justifyContent:'center'}}>
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><path d="M6 16l8 8 12-12" stroke={C.magenta} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      </div>
+      <div style={{textAlign:'center'}}>
+        <h2 style={{fontSize:22,fontWeight:700,color:C.g900,marginBottom:8}}>Solicitud radicada</h2>
+        <p style={{fontSize:14,color:C.g700}}>Número de solicitud: <strong>SOL-2024-0912</strong></p>
+      </div>
+      <button style={{padding:'12px 28px',borderRadius:9,background:C.magenta,color:'#fff',fontSize:14,fontWeight:600,border:'none',cursor:'pointer',fontFamily:'Roboto'}}>Ir al seguimiento</button>
+    </div>
+  );
+
+  return (
+    <div style={{marginTop:52,display:'flex',flexDirection:'column',height:'calc(100vh - 52px)'}}>
+      {/* Progress header */}
+      <div style={{background:C.white,borderBottom:`1px solid ${C.g200}`,padding:'14px 32px',flexShrink:0}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+          <span style={{fontSize:14,fontWeight:600,color:C.g900}}>Nueva solicitud de crédito vehicular</span>
+          <div style={{display:'flex',alignItems:'center',gap:12}}>
+            <span style={{fontSize:13,color:C.g500}}>{pct}% completado</span>
+            <button style={{padding:'7px 14px',borderRadius:8,background:C.g50,border:`1px solid ${C.g200}`,fontSize:12,color:C.g700,cursor:'pointer',fontFamily:'Roboto'}}>Guardar borrador</button>
+          </div>
+        </div>
+        <div style={{display:'flex',gap:6}}>
+          {SECTIONS.map((s,i)=>(
+            <div key={s} onClick={()=>setSection(i)} style={{flex:1,cursor:'pointer'}}>
+              <div style={{height:4,borderRadius:2,background:sectionFill[i]?C.magenta:i===section?C.g700:C.g200,transition:'background 0.3s',marginBottom:5}} />
+              <span style={{fontSize:11,fontWeight:i===section?600:400,color:i===section?C.g900:C.g500}}>{i+1}. {s}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Body */}
+      <div style={{flex:1,overflowY:'auto',padding:'24px 32px',display:'flex',gap:24}}>
+        <div style={{flex:1}}>
+          <div style={{background:C.white,borderRadius:14,padding:24,boxShadow:`0 2px 8px rgba(0,0,0,0.05)`,border:`1px solid ${C.g200}`,marginBottom:20}}>
+            <h3 style={{fontSize:16,fontWeight:600,color:C.g900,marginBottom:20}}>{section+1}. {SECTIONS[section]}</h3>
+            <FormContent section={section} data={data} setData={setData} />
+          </div>
+          <div style={{display:'flex',justifyContent:'space-between'}}>
+            <button disabled={section===0} onClick={()=>setSection(s=>s-1)} style={{padding:'10px 20px',borderRadius:9,background:section===0?C.g50:C.white,border:`1px solid ${C.g200}`,fontSize:13,color:section===0?C.g500:C.g700,cursor:section===0?'not-allowed':'pointer',fontFamily:'Roboto'}}>← Anterior</button>
+            {section<3
+              ? <button onClick={()=>setSection(s=>s+1)} style={{padding:'10px 20px',borderRadius:9,background:C.magenta,color:'#fff',fontSize:13,fontWeight:600,border:'none',cursor:'pointer',fontFamily:'Roboto'}}>Siguiente →</button>
+              : <button onClick={()=>setModal(true)} disabled={!sectionFill.every(Boolean)} style={{padding:'10px 24px',borderRadius:9,background:sectionFill.every(Boolean)?C.magenta:C.g200,color:sectionFill.every(Boolean)?'#fff':C.g500,fontSize:13,fontWeight:600,border:'none',cursor:sectionFill.every(Boolean)?'pointer':'not-allowed',fontFamily:'Roboto',boxShadow:sectionFill.every(Boolean)?`0 4px 12px rgba(238,37,42,0.25)`:'none'}}>Radicar solicitud</button>}
+          </div>
+        </div>
+        <SideCard data={data} />
+      </div>
+      {modal&&(
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.4)',zIndex:200,display:'flex',alignItems:'center',justifyContent:'center'}}>
+          <div style={{background:C.white,borderRadius:16,padding:28,maxWidth:480,width:'90%',boxShadow:'0 20px 60px rgba(0,0,0,0.15)'}}>
+            <h3 style={{fontSize:16,fontWeight:700,color:C.g900,marginBottom:6}}>Confirmar radicación</h3>
+            <p style={{fontSize:13,color:C.g700,lineHeight:1.6,marginBottom:16}}>Revisa el resumen antes de enviar. Esta solicitud pasará al analista de crédito para su evaluación.</p>
+            {[['Cliente',data.nombre],['Vehículo',`${data.marca} ${data.modelo} ${data.anio}`],['Monto a financiar',`$${(parseInt(data.valorComercial?.replace(/\D/g,'')||0)-parseInt(data.cuotaInicial?.replace(/\D/g,'')||0)).toLocaleString('es-CO')}`]].map(([l,v])=>(
+              <div key={l} style={{display:'flex',justifyContent:'space-between',padding:'7px 0',borderBottom:`1px solid ${C.g200}`,fontSize:13}}>
+                <span style={{color:C.g500}}>{l}</span><span style={{color:C.g900,fontWeight:500}}>{v}</span>
+              </div>
+            ))}
+            <div onClick={()=>setConfirmed(c=>!c)} style={{display:'flex',gap:12,alignItems:'flex-start',marginTop:16,cursor:'pointer'}}>
+              <div style={{width:20,height:20,borderRadius:5,border:`2px solid ${confirmed?C.magenta:C.g200}`,background:confirmed?C.magenta:C.white,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,transition:'all 0.15s'}}>
+                {confirmed&&<svg width="11" height="8" viewBox="0 0 11 8" fill="none"><path d="M1 4l3 3 6-6" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+              </div>
+              <span style={{fontSize:13,color:C.g700,lineHeight:1.5}}>Confirmo que revisé la información con el cliente y es correcta.</span>
+            </div>
+            <div style={{display:'flex',gap:10,marginTop:20}}>
+              <button disabled={!confirmed} onClick={()=>{setModal(false);setSuccess(true);}} style={{flex:1,padding:12,borderRadius:9,background:confirmed?C.magenta:C.g200,color:confirmed?'#fff':C.g500,fontSize:14,fontWeight:600,border:'none',cursor:confirmed?'pointer':'not-allowed',fontFamily:'Roboto'}}>Radicar solicitud</button>
+              <button onClick={()=>setModal(false)} style={{flex:1,padding:12,borderRadius:9,background:C.g50,color:C.g700,fontSize:14,border:`1px solid ${C.g200}`,cursor:'pointer',fontFamily:'Roboto'}}>Revisar</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MobileForm() {
+  const [step, setStep] = useState(0);
+  const [data, setData] = useState({tipoDoc:'',numDoc:'',nombre:'',correo:'',celular:'',autocompletado:false,tipoContrato:'',empresa:'',ingresos:'',egresos:'',tipoVeh:'',marca:'',modelo:'',anio:'',valorComercial:'',cuotaInicial:'',concesionario:'',uploads:{}});
+  return (
+    <div style={{display:'flex',flexDirection:'column',height:'100%',background:C.g50}}>
+      <div style={{padding:'12px 16px',background:C.white,borderBottom:`1px solid ${C.g200}`,flexShrink:0}}>
+        <div style={{fontSize:13,fontWeight:600,color:C.g900,marginBottom:8}}>Nueva solicitud</div>
+        <div style={{display:'flex',gap:4}}>
+          {SECTIONS.map((s,i)=><div key={s} style={{flex:1,height:3,borderRadius:2,background:i<=step?C.magenta:C.g200}} />)}
+        </div>
+        <div style={{marginTop:6,fontSize:12,color:C.g500}}>Paso {step+1} de 4: {SECTIONS[step]}</div>
+      </div>
+      <div style={{flex:1,overflowY:'auto',padding:16}}>
+        <div style={{background:C.white,borderRadius:12,padding:16,boxShadow:`0 1px 6px rgba(0,0,0,0.05)`}}>
+          <FormContent section={step} data={data} setData={setData} mobile />
+        </div>
+      </div>
+      <div style={{padding:'12px 16px',background:C.white,borderTop:`1px solid ${C.g200}`,display:'flex',gap:10,flexShrink:0}}>
+        {step>0&&<button onClick={()=>setStep(s=>s-1)} style={{flex:1,padding:12,borderRadius:9,background:C.g50,color:C.g700,fontSize:13,border:`1px solid ${C.g200}`,cursor:'pointer',fontFamily:'Roboto'}}>← Anterior</button>}
+        <button onClick={()=>step<3?setStep(s=>s+1):null} style={{flex:2,padding:12,borderRadius:9,background:C.magenta,color:'#fff',fontSize:13,fontWeight:600,border:'none',cursor:'pointer',fontFamily:'Roboto',boxShadow:`0 3px 8px rgba(238,37,42,0.25)`}}>
+          {step<3?'Siguiente →':'Radicar solicitud'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  const [device, setDevice] = useState('desktop');
+  return (
+    <>
+      <NavBar device={device} setDevice={setDevice} />
+      {device==='desktop'
+        ? <DesktopForm />
+        : <div style={{display:'flex',justifyContent:'center',alignItems:'flex-start',background:'#EDECEA',padding:20,minHeight:'calc(100vh - 52px)',marginTop:52,overflowY:'auto'}}>
+            <div style={{width:390,height:760,background:C.white,borderRadius:24,overflow:'hidden',boxShadow:'0 20px 60px rgba(0,0,0,0.15)',display:'flex',flexDirection:'column'}}>
+              <MobileForm />
+            </div>
+          </div>}
+    </>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

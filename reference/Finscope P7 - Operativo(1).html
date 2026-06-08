@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Finscope — P7 Analista Operativo</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet"/>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Roboto',sans-serif;background:#F5F4F2;}
+    ::-webkit-scrollbar{width:5px;} ::-webkit-scrollbar-thumb{background:#DEDBD7;border-radius:3px;}
+    @keyframes slideIn{from{transform:translateX(100%);}to{transform:translateX(0);}}
+  </style>
+</head>
+<body><div id="root"></div>
+<script type="text/babel">
+const { useState } = React;
+const C = {magenta:'#ee252a',magentaL:'rgba(238,37,42,0.08)',blue:'#3f5cdd',g900:'#212121',g700:'#616161',g500:'#9E9E9E',g200:'#EEEEEE',g50:'#FAFAFA',white:'#FFFFFF'};
+
+const EXPEDIENTES = [
+  {id:'SOL-2024-0891',name:'Carlos Mejía',    monto:'$35.000.000',veh:'Mazda CX-5 2024',       tiempo:'15 min',estado:'Pendiente revisión',docs:[{n:'Avalúo del vehículo',e:'pendiente'},{n:'Contrato compraventa',e:'pendiente'},{n:'Póliza todo riesgo',e:'pendiente'},{n:'Matrícula / tarjeta prop.',e:'pendiente'}]},
+  {id:'SOL-2024-0897',name:'Laura Herrera',   monto:'$89.500.000',veh:'Toyota Corolla 2023',    tiempo:'40 min',estado:'En revisión',     docs:[{n:'Avalúo del vehículo',e:'validado'},{n:'Contrato compraventa',e:'validado'},{n:'Póliza todo riesgo',e:'cargado'},{n:'Matrícula / tarjeta prop.',e:'pendiente'}]},
+  {id:'SOL-2024-0903',name:'Mateo García',    monto:'$48.000.000',veh:'Chevrolet Spark 2024',   tiempo:'1 h',   estado:'Con observaciones',docs:[{n:'Avalúo del vehículo',e:'rechazado'},{n:'Contrato compraventa',e:'validado'},{n:'Póliza todo riesgo',e:'validado'},{n:'Matrícula / tarjeta prop.',e:'validado'}]},
+  {id:'SOL-2024-0871',name:'Natalia Ruiz',    monto:'$22.000.000',veh:'Renault Kwid 2024',      tiempo:'2 h',   estado:'Pendiente revisión',docs:[{n:'Avalúo del vehículo',e:'pendiente'},{n:'Contrato compraventa',e:'pendiente'},{n:'Póliza todo riesgo',e:'pendiente'},{n:'Matrícula / tarjeta prop.',e:'pendiente'}]},
+];
+
+const estadoBadge = {
+  'Pendiente revisión':{bg:C.g50,color:C.g700,border:C.g200},
+  'En revisión':       {bg:'#fffbeb',color:'#92400e',border:'#fcd34d'},
+  'Con observaciones': {bg:'#fef2f2',color:'#dc2626',border:'#fca5a5'},
+};
+
+const docColors = {pendiente:C.g500, cargado:C.blue, validado:'#22c55e', rechazado:'#ef4444'};
+const docLabels = {pendiente:'Pendiente', cargado:'Cargado', validado:'✓ Validado', rechazado:'✕ Rechazado'};
+
+function Logo(){return(<div style={{display:'flex',alignItems:'center',gap:8}}><div style={{background:'#fff',borderRadius:7,padding:3,boxShadow:'0 1px 4px rgba(0,0,0,0.10)',display:'flex'}}><img src="uploads/imagen.png" width={26} height={26} alt="Finscope" style={{display:'block'}}/></div><span style={{fontWeight:700,fontSize:17,color:C.g900,letterSpacing:'-0.4px'}}>Finscope</span></div>);}
+
+function NavBar({device,setDevice}){
+  const pages=[{label:'P1–P2',href:'Finscope Prototype.html'},{label:'P3',href:'Finscope P3 - Analista.html'},{label:'P4',href:'Finscope P4 - Coordinador.html'},{label:'P5',href:'Finscope P5 - Ejecutivo.html'},{label:'P6',href:'Finscope P6 - Ejecutivo Dashboard.html'},{label:'P7 Op.Revisión',href:'Finscope P7 - Operativo.html',active:true},{label:'P8',href:'Finscope P8 - Desembolso.html'},{label:'P9',href:'Finscope P9 - Excepcion.html'}];
+  return(<div style={{height:52,background:C.white,borderBottom:`1px solid ${C.g200}`,display:'flex',alignItems:'center',padding:'0 16px',gap:16,position:'fixed',top:0,left:0,right:0,zIndex:100}}>
+    <Logo/>
+    <div style={{display:'flex',gap:0,height:'100%',alignItems:'center',flex:1}}>
+      {pages.map(p=><a key={p.label} href={p.href} style={{padding:'0 10px',height:'100%',display:'flex',alignItems:'center',fontSize:12,fontWeight:p.active?600:400,color:p.active?C.magenta:C.g700,borderBottom:p.active?`2px solid ${C.magenta}`:'2px solid transparent',textDecoration:'none',whiteSpace:'nowrap'}}>{p.label}</a>)}
+    </div>
+    <button onClick={()=>setDevice(d=>d==='desktop'?'mobile':'desktop')} style={{flexShrink:0,background:C.g50,border:`1px solid ${C.g200}`,borderRadius:8,padding:'6px 12px',fontSize:12,color:C.g700,cursor:'pointer',fontFamily:'Roboto'}}>{device==='desktop'?'📱 Móvil':'🖥 Desktop'}</button>
+    <div style={{display:'flex',alignItems:'center',gap:8,flexShrink:0}}>
+      <div style={{width:32,height:32,borderRadius:'50%',background:'#8b5cf6',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:13,fontWeight:600}}>CP</div>
+      <div style={{fontSize:13}}><div style={{fontWeight:500,color:C.g900}}>Carolina Pérez</div><div style={{fontSize:11,color:C.g500}}>Analista Op. Revisión</div></div>
+    </div>
+  </div>);
+}
+
+function RejectModal({doc,onClose,onConfirm}){
+  const [cat,setCat]=useState('');const [motivo,setMotivo]=useState('');
+  return(
+    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.45)',zIndex:300,display:'flex',alignItems:'center',justifyContent:'center'}}>
+      <div style={{background:C.white,borderRadius:16,padding:28,maxWidth:440,width:'90%',boxShadow:'0 20px 60px rgba(0,0,0,0.15)'}}>
+        <h3 style={{fontSize:16,fontWeight:700,color:C.g900,marginBottom:4}}>Rechazar documento</h3>
+        <p style={{fontSize:13,color:C.g500,marginBottom:18}}>{doc}</p>
+        <select value={cat} onChange={e=>setCat(e.target.value)} style={{width:'100%',padding:'10px 12px',borderRadius:9,border:`1px solid ${C.g200}`,fontSize:13,fontFamily:'Roboto',color:cat?C.g900:C.g500,marginBottom:12,outline:'none'}}>
+          <option value="">Categoría del rechazo *</option>
+          <option>Documento ilegible</option><option>Datos no coinciden con el expediente</option>
+          <option>Vencido</option><option>Falta firma o sello</option><option>Otro</option>
+        </select>
+        <textarea value={motivo} onChange={e=>setMotivo(e.target.value)} placeholder="Descripción para el ejecutivo (mínimo 20 caracteres) *" style={{width:'100%',borderRadius:9,border:`1px solid ${motivo.length>0&&motivo.length<20?'#ef4444':C.g200}`,padding:'10px 12px',fontSize:13,fontFamily:'Roboto',resize:'none',height:88,outline:'none'}}/>
+        {motivo.length>0&&motivo.length<20&&<p style={{fontSize:11,color:'#ef4444',marginTop:4}}>{20-motivo.length} caracteres más</p>}
+        <div style={{display:'flex',gap:10,marginTop:16}}>
+          <button disabled={!cat||motivo.length<20} onClick={()=>onConfirm(cat,motivo)} style={{flex:1,padding:12,borderRadius:9,background:cat&&motivo.length>=20?'#ef4444':C.g200,color:cat&&motivo.length>=20?'#fff':C.g500,fontSize:13,fontWeight:600,border:'none',cursor:cat&&motivo.length>=20?'pointer':'not-allowed',fontFamily:'Roboto'}}>Rechazar y notificar ejecutivo</button>
+          <button onClick={onClose} style={{flex:1,padding:12,borderRadius:9,background:C.g50,color:C.g700,fontSize:13,border:`1px solid ${C.g200}`,cursor:'pointer',fontFamily:'Roboto'}}>Cancelar</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DetailPanel({exp,onValidate,onSendDesembolso}){
+  const [rejectTarget,setRejectTarget]=useState(null);
+  const [docs,setDocs]=useState(exp.docs);
+  const allValid=docs.every(d=>d.e==='validado');
+  function handleValidate(i){const nd=[...docs];nd[i]={...nd[i],e:'validado'};setDocs(nd);}
+  function handleReject(i,cat,mot){const nd=[...docs];nd[i]={...nd[i],e:'rechazado',motivo:mot};setDocs(nd);setRejectTarget(null);}
+  return(
+    <div style={{flex:1,overflowY:'auto',padding:'20px 24px',display:'flex',flexDirection:'column',gap:16}}>
+      {/* Header */}
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
+        <div><div style={{fontSize:18,fontWeight:700,color:C.g900}}>{exp.name}</div><div style={{fontSize:13,color:C.g500,marginTop:2}}>{exp.id} · {exp.monto} · {exp.veh}</div></div>
+        {allValid&&<button onClick={onSendDesembolso} style={{padding:'10px 18px',borderRadius:10,background:C.magenta,color:'#fff',fontSize:13,fontWeight:600,border:'none',cursor:'pointer',fontFamily:'Roboto',boxShadow:`0 3px 10px rgba(238,37,42,0.25)`}}>Enviar a desembolso →</button>}
+      </div>
+      {allValid&&<div style={{background:'#f0fdf4',border:'1px solid #86efac',borderRadius:10,padding:'12px 16px',fontSize:13,color:'#166534',fontWeight:500}}>✓ Este expediente está listo para pasar a desembolso.</div>}
+      {/* Checklist */}
+      <div style={{background:C.white,borderRadius:12,border:`1px solid ${C.g200}`,overflow:'hidden'}}>
+        <div style={{background:C.g50,padding:'10px 16px',fontSize:12,fontWeight:600,color:C.g700,textTransform:'uppercase',letterSpacing:'0.6px'}}>Checklist documental</div>
+        {docs.map((d,i)=>(
+          <div key={i} style={{padding:'14px 16px',borderBottom:i<docs.length-1?`1px solid ${C.g200}`:'none'}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:d.e==='rechazado'?8:0}}>
+              <div style={{display:'flex',alignItems:'center',gap:10}}>
+                {/* Doc icon placeholder */}
+                <div style={{width:36,height:44,borderRadius:5,background:C.g50,border:`1px solid ${C.g200}`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                  <svg width="16" height="20" viewBox="0 0 16 20" fill="none"><rect x="1" y="1" width="14" height="18" rx="2" stroke={C.g500} strokeWidth="1.2"/><path d="M4 6h8M4 10h8M4 14h5" stroke={C.g500} strokeWidth="1.2" strokeLinecap="round"/></svg>
+                </div>
+                <div>
+                  <div style={{fontSize:14,fontWeight:500,color:C.g900}}>{d.n}</div>
+                  <div style={{fontSize:12,fontWeight:500,color:docColors[d.e]}}>{docLabels[d.e]}</div>
+                </div>
+              </div>
+              {d.e!=='validado'&&d.e!=='rechazado'&&(
+                <div style={{display:'flex',gap:8}}>
+                  <button onClick={()=>handleValidate(i)} style={{padding:'6px 14px',borderRadius:7,background:'#f0fdf4',border:'1px solid #86efac',color:'#166534',fontSize:12,fontWeight:500,cursor:'pointer',fontFamily:'Roboto'}}>Validar</button>
+                  <button onClick={()=>setRejectTarget(i)} style={{padding:'6px 14px',borderRadius:7,background:'#fef2f2',border:'1px solid #fca5a5',color:'#dc2626',fontSize:12,fontWeight:500,cursor:'pointer',fontFamily:'Roboto'}}>Rechazar</button>
+                </div>
+              )}
+              {d.e==='validado'&&<span style={{fontSize:12,color:'#22c55e',fontWeight:600}}>✓ Validado</span>}
+              {d.e==='rechazado'&&<span style={{fontSize:12,color:'#ef4444',fontWeight:600}}>✕ Rechazado</span>}
+            </div>
+            {d.e==='rechazado'&&d.motivo&&<div style={{fontSize:12,color:'#dc2626',background:'#fef2f2',borderRadius:6,padding:'6px 10px',marginTop:4}}>Motivo: {d.motivo}</div>}
+          </div>
+        ))}
+      </div>
+      {rejectTarget!==null&&<RejectModal doc={docs[rejectTarget].n} onClose={()=>setRejectTarget(null)} onConfirm={(c,m)=>handleReject(rejectTarget,c,m)}/>}
+    </div>
+  );
+}
+
+function DesktopLayout(){
+  const [sel,setSel]=useState(0);
+  const [filter,setFilter]=useState('todos');
+  const [sent,setSent]=useState({});
+  const filtered=EXPEDIENTES.filter(e=>filter==='todos'||filter==='nuevos'&&e.estado==='Pendiente revisión'||filter==='observaciones'&&e.estado==='Con observaciones');
+  const exp=EXPEDIENTES[sel];
+  return(
+    <div style={{display:'flex',height:'calc(100vh - 52px)',marginTop:52}}>
+      {/* Left */}
+      <div style={{width:'28%',borderRight:`1px solid ${C.g200}`,display:'flex',flexDirection:'column',background:C.white}}>
+        <div style={{padding:'14px 16px',borderBottom:`1px solid ${C.g200}`,flexShrink:0}}>
+          <div style={{fontSize:14,fontWeight:600,color:C.g900,marginBottom:10}}>Cola de revisión — {EXPEDIENTES.length}</div>
+          <select value={filter} onChange={e=>setFilter(e.target.value)} style={{width:'100%',padding:'7px 10px',borderRadius:8,border:`1px solid ${C.g200}`,fontSize:13,fontFamily:'Roboto',color:C.g700,outline:'none'}}>
+            <option value="todos">Todos</option><option value="nuevos">Nuevos</option><option value="observaciones">Con observaciones</option>
+          </select>
+        </div>
+        <div style={{flex:1,overflowY:'auto'}}>
+          {filtered.map((e,i)=>{
+            const eb=estadoBadge[e.estado]||estadoBadge['Pendiente revisión'];
+            const idx=EXPEDIENTES.indexOf(e);
+            return(
+              <div key={e.id} onClick={()=>setSel(idx)} style={{padding:'13px 16px',background:sel===idx?C.magentaL:C.white,borderLeft:sel===idx?`3px solid ${C.magenta}`:'3px solid transparent',borderBottom:`1px solid ${C.g200}`,cursor:'pointer'}}>
+                <div style={{display:'flex',justifyContent:'space-between',marginBottom:4}}>
+                  <span style={{fontSize:14,fontWeight:600,color:C.g900}}>{e.name}</span>
+                  {sent[e.id]&&<span style={{fontSize:10,fontWeight:600,color:'#22c55e'}}>✓ Enviado</span>}
+                </div>
+                <div style={{fontSize:12,color:C.g500,marginBottom:6}}>{e.id} · {e.monto}</div>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                  <span style={{fontSize:11,fontWeight:600,borderRadius:5,padding:'2px 7px',background:eb.bg,color:eb.color,border:`1px solid ${eb.border}`}}>{e.estado}</span>
+                  <span style={{fontSize:11,color:C.g500}}>{e.tiempo}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      {/* Right */}
+      <div style={{flex:1,display:'flex',flexDirection:'column',background:C.g50}}>
+        <DetailPanel key={sel} exp={exp} onSendDesembolso={()=>setSent(s=>({...s,[exp.id]:true}))}/>
+      </div>
+    </div>
+  );
+}
+
+function MobileLayout(){
+  const [tab,setTab]=useState('cola');
+  const [sel,setSel]=useState(0);
+  const exp=EXPEDIENTES[sel];
+  return(
+    <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
+      <div style={{display:'flex',borderBottom:`1px solid ${C.g200}`,background:C.white,flexShrink:0}}>
+        {['cola','detalle'].map(t=><button key={t} onClick={()=>setTab(t)} style={{flex:1,padding:'11px 0',background:'none',border:'none',borderBottom:tab===t?`2px solid ${C.magenta}`:'2px solid transparent',fontSize:14,fontWeight:tab===t?600:400,color:tab===t?C.magenta:C.g700,cursor:'pointer',fontFamily:'Roboto',textTransform:'capitalize'}}>{t==='cola'?'Cola':'Detalle'}</button>)}
+      </div>
+      <div style={{flex:1,overflowY:'auto',background:C.g50}}>
+        {tab==='cola'&&EXPEDIENTES.map((e,i)=>{
+          const eb=estadoBadge[e.estado]||estadoBadge['Pendiente revisión'];
+          return(
+            <div key={e.id} onClick={()=>{setSel(i);setTab('detalle');}} style={{background:C.white,borderBottom:`1px solid ${C.g200}`,padding:'14px 16px',cursor:'pointer'}}>
+              <div style={{display:'flex',justifyContent:'space-between',marginBottom:4}}>
+                <span style={{fontSize:14,fontWeight:600,color:C.g900}}>{e.name}</span>
+                <span style={{fontSize:11,fontWeight:600,borderRadius:5,padding:'2px 7px',background:eb.bg,color:eb.color}}>{e.estado}</span>
+              </div>
+              <div style={{fontSize:12,color:C.g500}}>{e.id} · {e.monto} · {e.tiempo}</div>
+            </div>
+          );
+        })}
+        {tab==='detalle'&&<DetailPanel key={sel} exp={exp} onSendDesembolso={()=>{}}/>}
+      </div>
+    </div>
+  );
+}
+
+function App(){
+  const [device,setDevice]=useState('desktop');
+  return(<>
+    <NavBar device={device} setDevice={setDevice}/>
+    {device==='desktop'
+      ?<DesktopLayout/>
+      :<div style={{display:'flex',justifyContent:'center',alignItems:'flex-start',background:'#EDECEA',padding:20,minHeight:'calc(100vh - 52px)',marginTop:52}}>
+         <div style={{width:390,height:760,background:C.white,borderRadius:24,overflow:'hidden',boxShadow:'0 20px 60px rgba(0,0,0,0.15)',display:'flex',flexDirection:'column'}}>
+           <MobileLayout/>
+         </div>
+       </div>}
+  </>);
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

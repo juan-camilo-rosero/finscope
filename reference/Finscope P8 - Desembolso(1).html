@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Finscope — P8 Cola Desembolso</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet"/>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Roboto',sans-serif;background:#F5F4F2;}
+    ::-webkit-scrollbar{width:5px;} ::-webkit-scrollbar-thumb{background:#DEDBD7;border-radius:3px;}
+    @keyframes slideIn{from{transform:translateX(100%);}to{transform:translateX(0);}}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+  </style>
+</head>
+<body><div id="root"></div>
+<script type="text/babel">
+const { useState } = React;
+const C = {magenta:'#ee252a',magentaL:'rgba(238,37,42,0.08)',blue:'#3f5cdd',g900:'#212121',g700:'#616161',g500:'#9E9E9E',g200:'#EEEEEE',g50:'#FAFAFA',white:'#FFFFFF'};
+
+const DESEMBOLSOS = [
+  {id:'SOL-2024-0891',name:'Carlos Mejía',   concesionario:'Mazda Col. — Bogotá Norte',monto:'$35.000.000',estado:'Listo para desembolsar',fechaVal:'28 abr 2026',analista:'Carolina Pérez',banco:'Bancolombia',tipoCuenta:'Ahorros',numCuenta:'••••3421',titular:'Mazda Colombia S.A.S.',match:true},
+  {id:'SOL-2024-0871',name:'Natalia Ruiz',   concesionario:'Motorex S.A.',             monto:'$22.000.000',estado:'Listo para desembolsar',fechaVal:'28 abr 2026',analista:'Carolina Pérez',banco:'Davivienda',tipoCuenta:'Corriente',numCuenta:'••••7890',titular:'Motorex S.A.',match:true},
+  {id:'SOL-2024-0854',name:'Felipe Torres',  concesionario:'Grupo Automotriz Andino',  monto:'$61.500.000',estado:'En ejecución',           fechaVal:'27 abr 2026',analista:'Luis Mora',    banco:'BBVA',       tipoCuenta:'Corriente',numCuenta:'••••1203',titular:'Grupo Automotriz S.A.',match:false},
+  {id:'SOL-2024-0839',name:'Sandra Vega',    concesionario:'Automotores El Cóndor',    monto:'$18.200.000',estado:'Desembolsado',           fechaVal:'26 abr 2026',analista:'Luis Mora',    banco:'Bancolombia',tipoCuenta:'Ahorros',numCuenta:'••••5567',titular:'Automotores El Cóndor',match:true},
+];
+
+const estadoProps = {
+  'Listo para desembolsar':{bg:'#f0fdf4',color:'#22c55e',border:'#86efac'},
+  'En ejecución':          {bg:'#fffbeb',color:'#92400e',border:'#fcd34d'},
+  'Desembolsado':          {bg:C.g50,    color:C.g500,   border:C.g200},
+  'Observado':             {bg:'#fef2f2',color:'#dc2626',border:'#fca5a5'},
+};
+
+function Logo(){return(<div style={{display:'flex',alignItems:'center',gap:8}}><div style={{background:'#fff',borderRadius:7,padding:3,boxShadow:'0 1px 4px rgba(0,0,0,0.10)',display:'flex'}}><img src="uploads/imagen.png" width={26} height={26} alt="Finscope" style={{display:'block'}}/></div><span style={{fontWeight:700,fontSize:17,color:C.g900,letterSpacing:'-0.4px'}}>Finscope</span></div>);}
+
+function NavBar({device,setDevice}){
+  const pages=[{label:'P1–P2',href:'Finscope Prototype.html'},{label:'P3',href:'Finscope P3 - Analista.html'},{label:'P4',href:'Finscope P4 - Coordinador.html'},{label:'P5',href:'Finscope P5 - Ejecutivo.html'},{label:'P6',href:'Finscope P6 - Ejecutivo Dashboard.html'},{label:'P7',href:'Finscope P7 - Operativo.html'},{label:'P8 Desembolso',href:'Finscope P8 - Desembolso.html',active:true},{label:'P9',href:'Finscope P9 - Excepcion.html'}];
+  return(<div style={{height:52,background:C.white,borderBottom:`1px solid ${C.g200}`,display:'flex',alignItems:'center',padding:'0 16px',gap:16,position:'fixed',top:0,left:0,right:0,zIndex:100}}>
+    <Logo/>
+    <div style={{display:'flex',gap:0,height:'100%',alignItems:'center',flex:1}}>
+      {pages.map(p=><a key={p.label} href={p.href} style={{padding:'0 10px',height:'100%',display:'flex',alignItems:'center',fontSize:12,fontWeight:p.active?600:400,color:p.active?C.magenta:C.g700,borderBottom:p.active?`2px solid ${C.magenta}`:'2px solid transparent',textDecoration:'none',whiteSpace:'nowrap'}}>{p.label}</a>)}
+    </div>
+    <button onClick={()=>setDevice(d=>d==='desktop'?'mobile':'desktop')} style={{flexShrink:0,background:C.g50,border:`1px solid ${C.g200}`,borderRadius:8,padding:'6px 12px',fontSize:12,color:C.g700,cursor:'pointer',fontFamily:'Roboto'}}>{device==='desktop'?'📱 Móvil':'🖥 Desktop'}</button>
+    <div style={{display:'flex',alignItems:'center',gap:8,flexShrink:0}}>
+      <div style={{width:32,height:32,borderRadius:'50%',background:'#0ea5e9',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:13,fontWeight:600}}>GM</div>
+      <div style={{fontSize:13}}><div style={{fontWeight:500,color:C.g900}}>Guillermo Medina</div><div style={{fontSize:11,color:C.g500}}>Analista de Desembolso</div></div>
+    </div>
+  </div>);
+}
+
+function Drawer({row,onClose,onExecuted}){
+  const [monto,setMonto]=useState(row.monto.replace(/\D/g,''));
+  const [confirm,setConfirm]=useState(false);
+  const [done,setDone]=useState(row.estado==='Desembolsado');
+  function execute(){setConfirm(false);setDone(true);onExecuted();}
+  return(
+    <>
+      <div onClick={onClose} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.25)',zIndex:200}}/>
+      <div style={{position:'fixed',right:0,top:0,bottom:0,width:500,background:C.white,zIndex:201,animation:'slideIn 0.25s ease',display:'flex',flexDirection:'column',boxShadow:'-8px 0 40px rgba(0,0,0,0.10)'}}>
+        <div style={{padding:'18px 20px',borderBottom:`1px solid ${C.g200}`,display:'flex',justifyContent:'space-between',alignItems:'center',flexShrink:0}}>
+          <div><div style={{fontSize:16,fontWeight:700,color:C.g900}}>{row.name}</div><div style={{fontSize:12,color:C.g500}}>{row.id} · {row.monto}</div></div>
+          <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',fontSize:20,color:C.g500}}>✕</button>
+        </div>
+        <div style={{flex:1,overflowY:'auto',padding:20,display:'flex',flexDirection:'column',gap:16}}>
+          {/* Bloque 1 — Resumen */}
+          <div style={{borderRadius:12,border:`1px solid ${C.g200}`,overflow:'hidden'}}>
+            <div style={{background:C.g50,padding:'10px 16px',fontSize:12,fontWeight:600,color:C.g700,textTransform:'uppercase',letterSpacing:'0.6px'}}>Resumen del caso</div>
+            <div style={{padding:'12px 16px'}}>
+              {[['Concesionario',row.concesionario],['Expediente validado por',row.analista],['Fecha de validación',row.fechaVal]].map(([l,v])=>(
+                <div key={l} style={{display:'flex',justifyContent:'space-between',padding:'6px 0',borderBottom:`1px solid ${C.g200}`,fontSize:13}}><span style={{color:C.g500}}>{l}</span><span style={{color:C.g900,fontWeight:500}}>{v}</span></div>
+              ))}
+            </div>
+          </div>
+          {/* Bloque 2 — Datos bancarios */}
+          <div style={{borderRadius:12,border:`1px solid ${row.match?C.g200:'#fca5a5'}`,overflow:'hidden'}}>
+            <div style={{background:row.match?C.g50:'#fef2f2',padding:'10px 16px',fontSize:12,fontWeight:600,color:row.match?C.g700:'#dc2626',textTransform:'uppercase',letterSpacing:'0.6px'}}>Datos bancarios del concesionario</div>
+            {!row.match&&<div style={{background:'#fef2f2',padding:'10px 16px',fontSize:13,color:'#dc2626',borderBottom:`1px solid #fca5a5`}}>⚠ Los datos bancarios no coinciden con el registro maestro. Contacta al ejecutivo comercial antes de continuar.</div>}
+            <div style={{padding:'12px 16px'}}>
+              {[['Entidad financiera',row.banco],['Tipo de cuenta',row.tipoCuenta],['Número de cuenta',row.numCuenta],['Titular',row.titular]].map(([l,v])=>(
+                <div key={l} style={{display:'flex',justifyContent:'space-between',padding:'6px 0',borderBottom:`1px solid ${C.g200}`,fontSize:13}}><span style={{color:C.g500}}>{l}</span><span style={{color:C.g900,fontWeight:500}}>{v}</span></div>
+              ))}
+            </div>
+          </div>
+          {/* Bloque 3 — Conciliación */}
+          <div style={{borderRadius:12,border:`1px solid ${C.g200}`,overflow:'hidden'}}>
+            <div style={{background:C.g50,padding:'10px 16px',fontSize:12,fontWeight:600,color:C.g700,textTransform:'uppercase',letterSpacing:'0.6px'}}>Conciliación del monto</div>
+            <div style={{padding:'16px'}}>
+              <div style={{display:'flex',justifyContent:'space-between',marginBottom:10,fontSize:13}}><span style={{color:C.g500}}>Monto aprobado en expediente</span><span style={{color:C.g900,fontWeight:600}}>{row.monto}</span></div>
+              <div style={{marginBottom:6,fontSize:13,color:C.g700}}>Monto a desembolsar</div>
+              <input value={monto} onChange={e=>setMonto(e.target.value)} style={{width:'100%',padding:'10px 12px',borderRadius:9,border:`1px solid ${C.g200}`,fontSize:15,fontWeight:600,color:C.g900,fontFamily:'Roboto',outline:'none'}}/>
+              <p style={{fontSize:11,color:C.g500,marginTop:6}}>Solo editable dentro de tolerancia aprobada (±2 %).</p>
+            </div>
+          </div>
+        </div>
+        {/* Footer */}
+        <div style={{padding:'14px 20px',borderTop:`1px solid ${C.g200}`,flexShrink:0}}>
+          {done
+            ?<div style={{background:'#f0fdf4',border:'1px solid #86efac',borderRadius:10,padding:'12px 16px',fontSize:14,color:'#166534',fontWeight:500,textAlign:'center',animation:'fadeIn 0.3s ease'}}>✓ Desembolso ejecutado · Comprobante disponible</div>
+            :<button disabled={!row.match} onClick={()=>setConfirm(true)} style={{width:'100%',padding:14,borderRadius:10,background:row.match?C.magenta:C.g200,color:row.match?'#fff':C.g500,fontSize:15,fontWeight:600,border:'none',cursor:row.match?'pointer':'not-allowed',fontFamily:'Roboto',boxShadow:row.match?`0 4px 12px rgba(238,37,42,0.25)`:'none'}}>Ejecutar desembolso</button>
+          }
+        </div>
+      </div>
+      {confirm&&(
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',zIndex:300,display:'flex',alignItems:'center',justifyContent:'center'}}>
+          <div style={{background:C.white,borderRadius:16,padding:28,maxWidth:420,width:'90%',boxShadow:'0 20px 60px rgba(0,0,0,0.15)'}}>
+            <div style={{fontSize:28,marginBottom:12}}>💸</div>
+            <h3 style={{fontSize:16,fontWeight:700,color:C.g900,marginBottom:8}}>Confirmar ejecución</h3>
+            <p style={{fontSize:13,color:C.g700,lineHeight:1.6,marginBottom:20}}>Vas a transferir <strong>{row.monto}</strong> a <strong>{row.concesionario}</strong>. Esta acción no se puede revertir desde este sistema.</p>
+            <div style={{display:'flex',flexDirection:'column',gap:10}}>
+              <button onClick={execute} style={{padding:13,borderRadius:9,background:C.magenta,color:'#fff',fontSize:14,fontWeight:600,border:'none',cursor:'pointer',fontFamily:'Roboto'}}>Confirmar ejecución</button>
+              <button onClick={()=>setConfirm(false)} style={{padding:13,borderRadius:9,background:C.g50,color:C.g700,fontSize:14,border:`1px solid ${C.g200}`,cursor:'pointer',fontFamily:'Roboto'}}>Cancelar</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function DesktopLayout(){
+  const [sel,setSel]=useState(null);
+  const [executed,setExecuted]=useState({});
+  return(
+    <div style={{marginTop:52,padding:'24px 32px',minHeight:'calc(100vh - 52px)',overflowY:'auto'}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:24}}>
+        <h1 style={{fontSize:22,fontWeight:700,color:C.g900}}>Cola de desembolso</h1>
+        <div style={{fontSize:13,color:C.g500}}>Horario de ejecución: 08:00 – 16:00 · Core bancario <span style={{color:'#22c55e',fontWeight:500}}>operativo</span> · <button onClick={()=>{const ev=new CustomEvent('toggle-core');window.dispatchEvent(ev);}} style={{background:'none',border:'none',color:C.blue,fontSize:12,cursor:'pointer',padding:0,textDecoration:'underline'}}>simular caída</button></div>
+      </div>
+      <div style={{background:C.white,borderRadius:14,overflow:'hidden',border:`1px solid ${C.g200}`,boxShadow:'0 2px 8px rgba(0,0,0,0.04)'}}>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 160px 150px 160px 150px 130px',padding:'10px 16px',borderBottom:`1px solid ${C.g200}`,background:C.g50,gap:12}}>
+          {['Solicitud','Cliente','Concesionario','Monto','Estado','Fecha val.','Acción'].map((h,i)=>(
+            <div key={i} style={{fontSize:11,fontWeight:600,color:C.g500,textTransform:'uppercase',letterSpacing:'0.5px'}}>{h}</div>
+          ))}
+        </div>
+        {DESEMBOLSOS.map(row=>{
+          const ep=estadoProps[executed[row.id]?'Desembolsado':row.estado]||estadoProps['Listo para desembolsar'];
+          const estado=executed[row.id]?'Desembolsado':row.estado;
+          return(
+            <div key={row.id} style={{display:'grid',gridTemplateColumns:'1fr 1fr 160px 150px 160px 150px 130px',padding:'13px 16px',borderBottom:`1px solid ${C.g200}`,alignItems:'center',gap:12}}>
+              <div style={{fontSize:13,color:C.g500}}>{row.id}</div>
+              <div style={{fontSize:14,fontWeight:500,color:C.g900}}>{row.name}</div>
+              <div style={{fontSize:12,color:C.g700,lineHeight:1.3}}>{row.concesionario}</div>
+              <div style={{fontSize:14,fontWeight:600,color:C.g900}}>{row.monto}</div>
+              <span style={{fontSize:12,fontWeight:500,borderRadius:6,padding:'3px 9px',background:ep.bg,color:ep.color,border:`1px solid ${ep.border}`,width:'fit-content'}}>{estado}</span>
+              <div style={{fontSize:12,color:C.g500}}>{row.fechaVal}</div>
+              <button onClick={()=>setSel(row)} disabled={estado==='Desembolsado'} style={{padding:'7px 14px',borderRadius:7,background:estado==='Desembolsado'?C.g50:C.magenta,color:estado==='Desembolsado'?C.g500:'#fff',fontSize:12,fontWeight:500,border:`1px solid ${estado==='Desembolsado'?C.g200:C.magenta}`,cursor:estado==='Desembolsado'?'not-allowed':'pointer',fontFamily:'Roboto'}}>
+                {estado==='Desembolsado'?'Completado':'Ejecutar'}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+      {sel&&<Drawer row={sel} onClose={()=>setSel(null)} onExecuted={()=>{setExecuted(e=>({...e,[sel.id]:true}));setSel(null);}}/>}
+    </div>
+  );
+}
+
+function MobileLayout(){
+  const [sel,setSel]=useState(null);
+  const [executed,setExecuted]=useState({});
+  return(
+    <div style={{display:'flex',flexDirection:'column',height:'100%',background:C.g50}}>
+      <div style={{padding:'12px 16px',background:C.white,borderBottom:`1px solid ${C.g200}`,flexShrink:0}}>
+        <div style={{fontSize:15,fontWeight:700,color:C.g900}}>Cola de desembolso</div>
+        <div style={{fontSize:12,color:C.g500,marginTop:2}}>Core bancario <span style={{color:'#22c55e'}}>operativo</span></div>
+      </div>
+      <div style={{flex:1,overflowY:'auto'}}>
+        {DESEMBOLSOS.map(row=>{
+          const estado=executed[row.id]?'Desembolsado':row.estado;
+          const ep=estadoProps[estado]||estadoProps['Listo para desembolsar'];
+          return(
+            <div key={row.id} style={{background:C.white,borderBottom:`1px solid ${C.g200}`,padding:'14px 16px'}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:4}}>
+                <div><div style={{fontSize:14,fontWeight:600,color:C.g900}}>{row.name}</div><div style={{fontSize:11,color:C.g500}}>{row.id}</div></div>
+                <span style={{fontSize:11,fontWeight:500,borderRadius:5,padding:'2px 7px',background:ep.bg,color:ep.color}}>{estado}</span>
+              </div>
+              <div style={{fontSize:13,color:C.g700,marginBottom:10}}>{row.monto} → {row.concesionario}</div>
+              <button onClick={()=>setSel(row)} disabled={estado==='Desembolsado'} style={{width:'100%',padding:'9px',borderRadius:8,background:estado==='Desembolsado'?C.g50:C.magenta,color:estado==='Desembolsado'?C.g500:'#fff',fontSize:13,fontWeight:500,border:`1px solid ${estado==='Desembolsado'?C.g200:C.magenta}`,cursor:estado==='Desembolsado'?'not-allowed':'pointer',fontFamily:'Roboto'}}>
+                {estado==='Desembolsado'?'Desembolsado':'Ver y ejecutar'}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+      {sel&&<Drawer row={sel} onClose={()=>setSel(null)} onExecuted={()=>{setExecuted(e=>({...e,[sel.id]:true}));setSel(null);}}/>}
+    </div>
+  );
+}
+
+function App(){
+  const [device,setDevice]=useState('desktop');
+  return(<>
+    <NavBar device={device} setDevice={setDevice}/>
+    {device==='desktop'
+      ?<DesktopLayout/>
+      :<div style={{display:'flex',justifyContent:'center',alignItems:'flex-start',background:'#EDECEA',padding:20,minHeight:'calc(100vh - 52px)',marginTop:52}}>
+         <div style={{width:390,height:760,background:C.white,borderRadius:24,overflow:'hidden',boxShadow:'0 20px 60px rgba(0,0,0,0.15)',display:'flex',flexDirection:'column'}}>
+           <MobileLayout/>
+         </div>
+       </div>}
+  </>);
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

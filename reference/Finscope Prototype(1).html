@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Finscope v2 — Correcciones RITE (Cliente)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Roboto',sans-serif;overflow:hidden;}
+    ::-webkit-scrollbar{width:4px;} ::-webkit-scrollbar-thumb{background:#DEDBD7;border-radius:3px;}
+    input[type=range]{-webkit-appearance:none;height:4px;border-radius:2px;outline:none;cursor:pointer;background:transparent;}
+    input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:#ee252a;box-shadow:0 2px 6px rgba(238,37,42,.35);cursor:pointer;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+    @keyframes pop{from{opacity:0;transform:scale(0.9);}to{opacity:1;transform:scale(1);}}
+    .rite-tag{position:absolute;top:8px;right:8px;background:#fef3c7;color:#92400e;border:1px solid #fcd34d;border-radius:4px;padding:2px 6px;font-size:9px;font-weight:600;letter-spacing:0.3px;z-index:5;pointer-events:none;text-transform:uppercase}
+  </style>
+</head>
+<body>
+<script type="text/babel" src="ios-frame.jsx"></script>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useRef, useEffect } = React;
+const C = { magenta:'#ee252a', magentaL:'rgba(238,37,42,0.08)', blue:'#3f5cdd', success:'#16a34a', successL:'#dcfce7', warn:'#f59e0b', g900:'#212121', g700:'#616161', g500:'#9E9E9E', g200:'#EEEEEE', g50:'#FAFAFA', white:'#FFFFFF' };
+
+/* Helpers */
+function calcCuota(m,p){ const r=Math.pow(1.152,1/12)-1; return Math.round(m*r/(1-Math.pow(1+r,-p))); }
+function fmt(n){ return '$'+n.toLocaleString('es-CO'); }
+// U5: Format miles automatic for any input
+function fmtMiles(n){ return Number(n).toLocaleString('es-CO'); }
+
+function Logo({ size=20 }) {
+  return (
+    <div style={{display:'flex',alignItems:'center',gap:8}}>
+      <div style={{background:'#fff',borderRadius:7,padding:3,boxShadow:'0 1px 4px rgba(0,0,0,0.10)',display:'flex'}}>
+        <img src="uploads/imagen.png" width={size+6} height={size+6} alt="Finscope" style={{display:'block'}} />
+      </div>
+      <span style={{fontWeight:700,fontSize:size+1,color:C.g900,letterSpacing:'-0.4px'}}>Finscope</span>
+    </div>
+  );
+}
+
+/* U5 FIX: Slider con input numérico exacto */
+function SliderPlus({ value, min, max, step=1, onChange, label, isMoney=false, suffix='' }) {
+  const pct=((value-min)/(max-min))*100;
+  const [editing,setEditing]=useState(false);
+  const [draft,setDraft]=useState('');
+  function commit(){
+    let v=parseInt(String(draft).replace(/\D/g,''),10);
+    if(isNaN(v))v=value;
+    v=Math.min(max,Math.max(min,v));
+    onChange(v); setEditing(false);
+  }
+  return (
+    <div>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+        <span style={{fontSize:13,color:C.g700}}>{label}</span>
+        {editing ? (
+          <input autoFocus value={draft} onChange={e=>setDraft(e.target.value)} onBlur={commit}
+            onKeyDown={e=>e.key==='Enter'&&commit()}
+            style={{fontSize:14,fontWeight:600,color:C.g900,border:`1.5px solid ${C.magenta}`,borderRadius:6,padding:'2px 8px',width:140,textAlign:'right',outline:'none',fontFamily:'Roboto'}} />
+        ) : (
+          <button onClick={()=>{setEditing(true);setDraft(isMoney?fmtMiles(value):String(value));}}
+            style={{fontSize:14,fontWeight:600,color:C.g900,background:'transparent',border:'none',cursor:'text',padding:'2px 4px',fontFamily:'Roboto',borderBottom:`1px dashed ${C.g500}`}}>
+            {isMoney?fmt(value):value+suffix} ✏️
+          </button>
+        )}
+      </div>
+      <div style={{position:'relative'}}>
+        <div style={{position:'absolute',top:'50%',left:0,right:0,height:4,transform:'translateY(-50%)',borderRadius:2,background:C.g200}} />
+        <div style={{position:'absolute',top:'50%',left:0,width:`${pct}%`,height:4,transform:'translateY(-50%)',borderRadius:2,background:C.magenta}} />
+        <input type="range" min={min} max={max} step={step} value={value} onChange={e=>onChange(Number(e.target.value))}
+          style={{position:'relative',zIndex:2,width:'100%',background:'transparent'}} />
+      </div>
+      <div style={{display:'flex',justifyContent:'space-between',marginTop:4}}>
+        <span style={{fontSize:11,color:C.g500}}>{isMoney?fmt(min):min+suffix}</span>
+        <span style={{fontSize:11,color:C.g500}}>{isMoney?fmt(max):max+suffix}</span>
+      </div>
+      <p style={{fontSize:10,color:C.g500,marginTop:6,fontStyle:'italic'}}>Toca el valor para escribirlo exacto.</p>
+    </div>
+  );
+}
+
+function UploadSlot({ label, optional=false, onUploaded }) {
+  const [s,setS]=useState('empty');
+  function tap(){ if(s==='done')return; setS('loading'); setTimeout(()=>{setS('done');onUploaded?.();},900); }
+  return (
+    <div onClick={tap} style={{flex:1,minHeight:88,borderRadius:10,border:`1.5px dashed ${s==='done'?C.success:C.g200}`,background:s==='done'?C.successL:C.g50,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:6,cursor:s==='done'?'default':'pointer',padding:12,transition:'all 0.2s'}}>
+      {s==='empty'&&<><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="4" stroke={C.g500} strokeWidth="1.5"/><path d="M12 8v8M8 12h8" stroke={C.g500} strokeWidth="1.5" strokeLinecap="round"/></svg><span style={{fontSize:11,color:C.g500,textAlign:'center',lineHeight:1.4}}>{optional?'Opcional':label}</span></>}
+      {s==='loading'&&<><div style={{width:20,height:20,borderRadius:'50%',border:`2px solid ${C.g200}`,borderTopColor:C.success,animation:'spin 0.7s linear infinite'}} /><span style={{fontSize:11,color:C.g500}}>Subiendo…</span></>}
+      {s==='done'&&<><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="10" fill={C.success}/><path d="M6.5 11l3 3 6-6" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg><span style={{fontSize:11,color:C.success,fontWeight:600,textAlign:'center'}}>{label} subido</span></>}
+    </div>
+  );
+}
+
+/* U1, U6 FIX: Toast confirmation system - feedback inmediato */
+function Toast({ msg, onDone }) {
+  useEffect(()=>{ const t=setTimeout(onDone,2800); return ()=>clearTimeout(t); },[]);
+  return (
+    <div style={{position:'fixed',bottom:30,left:'50%',transform:'translateX(-50%)',background:C.g900,color:'#fff',padding:'12px 20px',borderRadius:10,fontSize:13,zIndex:500,boxShadow:'0 10px 30px rgba(0,0,0,0.3)',display:'flex',alignItems:'center',gap:10,animation:'fadeUp 0.25s ease'}}>
+      <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="10" fill={C.success}/><path d="M6.5 11l3 3 6-6" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      {msg}
+    </div>
+  );
+}
+
+/* U4, U6 FIX: Modal de confirmación reutilizable */
+function ConfirmModal({ title, body, confirmLabel, danger=false, onConfirm, onCancel }) {
+  return (
+    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',zIndex:400,display:'flex',alignItems:'center',justifyContent:'center',padding:20,animation:'fadeUp 0.2s ease'}} onClick={onCancel}>
+      <div onClick={e=>e.stopPropagation()} style={{background:C.white,borderRadius:16,padding:'26px 24px 20px',maxWidth:400,width:'100%',boxShadow:'0 20px 60px rgba(0,0,0,0.25)',animation:'pop 0.2s ease'}}>
+        <h3 style={{fontSize:17,fontWeight:700,color:C.g900,marginBottom:8}}>{title}</h3>
+        <p style={{fontSize:13,color:C.g700,lineHeight:1.7,marginBottom:22}}>{body}</p>
+        <div style={{display:'flex',gap:10,flexDirection:'column'}}>
+          <button onClick={onConfirm} style={{padding:13,borderRadius:10,background:danger?'#dc2626':C.magenta,color:'#fff',fontSize:14,fontWeight:600,border:'none',cursor:'pointer',fontFamily:'Roboto'}}>{confirmLabel}</button>
+          <button onClick={onCancel} style={{padding:13,borderRadius:10,background:'transparent',color:C.g700,fontSize:14,fontWeight:500,border:`1px solid ${C.g200}`,cursor:'pointer',fontFamily:'Roboto'}}>Cancelar</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* U5 FIX: Catálogo de modelos preaprobados (reemplaza foto del vehículo) */
+const VEHICLE_CATALOG = [
+  { brand:'Renault',   models:[{name:'Kwid 2024',price:38500000},{name:'Logan 2023',price:41900000},{name:'Stepway 2023',price:46500000},{name:'Duster 2024',price:62000000}] },
+  { brand:'Chevrolet', models:[{name:'Spark GT 2024',price:36900000},{name:'Onix 2023',price:40500000},{name:'Onix 2024',price:42800000},{name:'Tracker 2024',price:65000000}] },
+  { brand:'Kia',       models:[{name:'Picanto 2024',price:39900000},{name:'Rio 2023',price:42000000},{name:'Soluto 2024',price:44500000},{name:'Sonet 2024',price:69000000}] },
+  { brand:'Mazda',     models:[{name:'Mazda 2 2023',price:41800000},{name:'Mazda 2 2024',price:45500000},{name:'CX-3 2023',price:58000000},{name:'CX-30 2024',price:78000000}] },
+];
+
+function VehicleCatalog({ monto, selected, onSelect }) {
+  const [brandIdx, setBrandIdx] = useState(0);
+  const [cuotaInicial, setCuotaInicial] = useState(0);
+  const [showOver, setShowOver] = useState(false);
+  const [sheet, setSheet] = useState(null); // null | {min:number}
+  const [draft, setDraft] = useState(0);
+  const brand = VEHICLE_CATALOG[brandIdx];
+  const capacidad = monto + cuotaInicial;
+  const fitting = brand.models.filter(m=>m.price<=capacidad);
+  const over     = brand.models.filter(m=>m.price>capacidad);
+  function openSheet(min){ setDraft(Math.max(min,cuotaInicial)); setSheet({min}); }
+  function applySheet(){ setCuotaInicial(draft); setSheet(null); setShowOver(true); }
+  return (
+    <div>
+      <p style={{fontSize:12,color:C.g500,marginBottom:10,lineHeight:1.5}}>
+        Modelos de aliados Finandina dentro de tu capacidad de compra de <strong style={{color:C.g900}}>{fmt(capacidad)}</strong>{cuotaInicial>0?` (${fmt(monto)} financiado + ${fmt(cuotaInicial)} cuota inicial)`:''}.
+      </p>
+      {/* Marca - chips */}
+      <div style={{display:'flex',gap:6,marginBottom:14,flexWrap:'wrap'}}>
+        {VEHICLE_CATALOG.map((b,i)=>(
+          <button key={b.brand} onClick={()=>setBrandIdx(i)} style={{padding:'6px 12px',borderRadius:18,fontSize:12,border:`1px solid ${brandIdx===i?C.magenta:C.g200}`,background:brandIdx===i?C.magentaL:C.white,color:brandIdx===i?C.magenta:C.g700,cursor:'pointer',fontFamily:'Roboto',fontWeight:brandIdx===i?600:400}}>{b.brand}</button>
+        ))}
+      </div>
+      {cuotaInicial>0 && (
+        <div style={{display:'flex',alignItems:'center',gap:8,padding:'8px 12px',background:C.magentaL,border:`1px solid ${C.magenta}`,borderRadius:10,marginBottom:12}}>
+          <div style={{flex:1,fontSize:12,color:C.g900}}><strong>Cuota inicial: {fmt(cuotaInicial)}</strong><div style={{fontSize:11,color:C.g500,marginTop:1}}>Aportada por ti al concesionario</div></div>
+          <button onClick={()=>openSheet(0)} style={{background:'none',border:'none',color:C.blue,fontSize:12,cursor:'pointer',padding:0}}>Editar</button>
+          <button onClick={()=>{setCuotaInicial(0);setShowOver(false);}} style={{background:'none',border:'none',color:C.g500,fontSize:12,cursor:'pointer',padding:0}}>Quitar</button>
+        </div>
+      )}
+      {/* Modelos dentro del cupo */}
+      {fitting.length===0 ? (
+        <div style={{padding:'18px 14px',background:C.g50,border:`1px dashed ${C.g200}`,borderRadius:10,textAlign:'center'}}>
+          <p style={{fontSize:13,color:C.g700,fontWeight:500,marginBottom:4}}>Ningún modelo de {brand.brand} cabe en {fmt(capacidad)}.</p>
+          <p style={{fontSize:12,color:C.g500,marginBottom:10}}>Prueba con otra marca o aporta una cuota inicial.</p>
+          <button onClick={()=>openSheet(over[0]?over[0].price-capacidad:1000000)} style={{padding:'8px 14px',borderRadius:8,background:C.magenta,color:'#fff',fontSize:12,fontWeight:600,border:'none',cursor:'pointer'}}>Agregar cuota inicial</button>
+        </div>
+      ) : (
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+          {fitting.map(m=>{
+            const sel=selected===m.name;
+            return (
+              <div key={m.name} onClick={()=>onSelect(m.name)} style={{borderRadius:10,border:`1.5px solid ${sel?C.magenta:C.g200}`,background:sel?C.magentaL:C.g50,padding:12,cursor:'pointer',transition:'all 0.15s'}}>
+                <div style={{height:60,background:'repeating-linear-gradient(45deg,#e8e6e3,#e8e6e3 6px,#dedbd7 6px,#dedbd7 12px)',borderRadius:6,marginBottom:8,display:'flex',alignItems:'center',justifyContent:'center',color:C.g500,fontSize:10,fontFamily:'monospace'}}>foto modelo</div>
+                <div style={{fontSize:12,fontWeight:600,color:C.g900,marginBottom:2}}>{m.name}</div>
+                <div style={{fontSize:11,color:C.g500}}>{fmt(m.price)}</div>
+                {sel&&<div style={{fontSize:11,color:C.magenta,marginTop:4,fontWeight:600}}>✓ Seleccionado</div>}
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {/* Disclosure de modelos sobre el cupo */}
+      {over.length>0 && !showOver && (
+        <button onClick={()=>setShowOver(true)} style={{width:'100%',marginTop:12,padding:'10px 12px',background:'transparent',border:`1px dashed ${C.g200}`,borderRadius:10,color:C.g700,fontSize:12,cursor:'pointer',fontFamily:'Roboto',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+          <span>{over.length} modelo{over.length>1?'s':''} de {brand.brand} requiere{over.length>1?'n':''} cuota inicial</span>
+          <span style={{color:C.blue}}>Ver →</span>
+        </button>
+      )}
+      {showOver && over.length>0 && (
+        <div style={{marginTop:14}}>
+          <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
+            <p style={{fontSize:11,color:C.g500,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.6px',flex:1}}>Requieren cuota inicial</p>
+            <button onClick={()=>setShowOver(false)} style={{background:'none',border:'none',color:C.g500,fontSize:11,cursor:'pointer',padding:0}}>Ocultar</button>
+          </div>
+          <div style={{display:'flex',flexDirection:'column',gap:8}}>
+            {over.map(m=>{
+              const falta = m.price - capacidad;
+              return (
+                <div key={m.name} style={{borderRadius:10,border:`1px solid ${C.g200}`,background:C.white,padding:12,display:'flex',gap:12,alignItems:'center'}}>
+                  <div style={{width:60,height:44,background:'repeating-linear-gradient(45deg,#f0eeec,#f0eeec 6px,#e6e3e0 6px,#e6e3e0 12px)',borderRadius:6,flexShrink:0}}></div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:12,fontWeight:600,color:C.g900}}>{m.name}</div>
+                    <div style={{fontSize:11,color:C.g500}}>{fmt(m.price)} · falta <strong style={{color:C.warn}}>{fmt(falta)}</strong> de cuota inicial</div>
+                  </div>
+                  <button onClick={()=>openSheet(falta)} style={{padding:'7px 10px',borderRadius:8,background:C.magentaL,border:`1px solid ${C.magenta}`,color:C.magenta,fontSize:11,fontWeight:600,cursor:'pointer',whiteSpace:'nowrap'}}>Agregar {fmt(falta).replace('$ ','$')}</button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+      <p style={{fontSize:11,color:C.g500,marginTop:12,fontStyle:'italic'}}>¿No encuentras tu vehículo? <span style={{color:C.blue,textDecoration:'underline',cursor:'pointer'}}>Buscar más modelos</span></p>
+      {/* Sheet: agregar cuota inicial */}
+      {sheet && (
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.45)',zIndex:300,display:'flex',alignItems:'flex-end',animation:'fadeUp 0.2s'}} onClick={()=>setSheet(null)}>
+          <div onClick={e=>e.stopPropagation()} style={{background:C.white,borderRadius:'16px 16px 0 0',width:'100%',padding:'22px 20px 24px',animation:'fadeUp 0.25s'}}>
+            <div style={{width:36,height:4,background:C.g200,borderRadius:2,margin:'0 auto 16px'}}></div>
+            <p style={{fontSize:17,fontWeight:600,color:C.g900,marginBottom:6}}>Agregar cuota inicial</p>
+            <p style={{fontSize:12,color:C.g500,marginBottom:18,lineHeight:1.5}}>La cuota inicial la pagas tú directamente al concesionario. Suma a tu cupo financiado para acceder a vehículos de mayor valor.</p>
+            <div style={{padding:'14px 14px',background:C.g50,borderRadius:10,marginBottom:16}}>
+              <p style={{fontSize:11,color:C.g500,marginBottom:4}}>Cuota inicial</p>
+              <div style={{display:'flex',alignItems:'baseline',gap:6}}>
+                <span style={{fontSize:18,color:C.g700}}>$</span>
+                <input type="text" inputMode="numeric" value={draft.toLocaleString('es-CO')} onChange={e=>{const n=parseInt(e.target.value.replace(/\D/g,''))||0;setDraft(Math.min(n,200000000));}} style={{flex:1,fontSize:24,fontWeight:700,color:C.g900,border:'none',background:'transparent',outline:'none',fontFamily:'Roboto'}} />
+              </div>
+              <input type="range" min="0" max="50000000" step="500000" value={draft} onChange={e=>setDraft(parseInt(e.target.value))} style={{width:'100%',marginTop:10,accentColor:C.magenta}} />
+              <div style={{display:'flex',justifyContent:'space-between',fontSize:10,color:C.g500,marginTop:2}}><span>$0</span><span>$50.000.000</span></div>
+            </div>
+            <div style={{padding:'12px 14px',background:C.magentaL,borderRadius:10,marginBottom:18}}>
+              <p style={{fontSize:11,color:C.g500,marginBottom:2}}>Capacidad de compra resultante</p>
+              <p style={{fontSize:20,fontWeight:700,color:C.g900}}>{fmt(monto+draft)}</p>
+              <p style={{fontSize:11,color:C.g500,marginTop:2}}>{fmt(monto)} financiado + {fmt(draft)} cuota inicial</p>
+            </div>
+            <button onClick={applySheet} style={{width:'100%',padding:14,borderRadius:12,background:C.magenta,color:'#fff',fontSize:15,fontWeight:600,border:'none',cursor:'pointer',marginBottom:8}}>Aplicar cuota inicial</button>
+            <button onClick={()=>setSheet(null)} style={{width:'100%',padding:12,borderRadius:12,background:'transparent',color:C.g700,fontSize:14,border:`1px solid ${C.g200}`,cursor:'pointer'}}>Cancelar</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   P1 — LANDING (cliente)
+   ═══════════════════════════════════════════════════════ */
+function P1Mobile({ monto,plazo,onMontoChange,onPlazoChange,onActivar }) {
+  const cuota=calcCuota(monto,plazo);
+  const [modal,setModal]=useState(false);
+  return (
+    <div style={{background:C.white,minHeight:'100%',paddingBottom:40}}>
+      <div style={{paddingTop:68,paddingBottom:18,padding:'68px 20px 18px',borderBottom:`1px solid ${C.g200}`}}><Logo /></div>
+      <div style={{padding:'30px 20px 26px'}}>
+        {/* U3, U5 FIX: "oferta" → "crédito de carro pre-aprobado" */}
+        <p style={{fontSize:11,fontWeight:600,color:C.magenta,letterSpacing:'0.8px',textTransform:'uppercase',marginBottom:8}}>Crédito de carro pre-aprobado</p>
+        <h1 style={{fontSize:26,fontWeight:700,color:C.g900,lineHeight:1.2,marginBottom:8}}>Hola, Carlos.</h1>
+        {/* U4 FIX: enfatiza que el crédito es exclusivamente para adquisición de carro */}
+        <p style={{fontSize:14,color:C.g700,lineHeight:1.6}}>Tu historial con Finandina te habilita un <strong>crédito exclusivo para la compra de carro</strong>, preparado a tu medida.</p>
+        <p style={{fontSize:12,color:C.g500,marginTop:6,lineHeight:1.5}}>Calculado con tu información interna en Finandina, sin consultas a centrales de riesgo externas.</p>
+      </div>
+      {/* U3 FIX: cupo + fecha caducidad GRANDES y centrales (U4: resaltar caducidad) */}
+      <div style={{margin:'0 20px 28px',borderRadius:14,background:C.white,boxShadow:'0 2px 16px rgba(0,0,0,0.08)',overflow:'hidden'}}>
+        <div style={{background:C.magenta,padding:'12px 18px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+          <span style={{fontSize:11,color:'rgba(255,255,255,0.85)',fontWeight:500,textTransform:'uppercase',letterSpacing:'0.8px'}}>Cupo disponible</span>
+        </div>
+        <div style={{padding:'22px 18px 18px',textAlign:'center'}}>
+          {/* U3 FIX: monto MUCHO más grande y centrado */}
+          <div style={{fontSize:46,fontWeight:700,color:C.g900,letterSpacing:'-1.5px',marginBottom:6,lineHeight:1}}>{fmt(42000000)}</div>
+          <div style={{fontSize:12,color:C.g500,marginBottom:18}}>Hasta 60 meses · Tasa desde <strong style={{color:C.g700}}>15,2 % E.A.*</strong></div>
+          {/* U4 FIX: fecha caducidad RESALTADA */}
+          <div style={{background:'#fffbeb',border:`1px solid #fcd34d`,borderRadius:10,padding:'10px 14px',display:'flex',gap:10,alignItems:'center',justifyContent:'center'}}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#92400e" strokeWidth="1.8"/><path d="M12 7v5l3 2" stroke="#92400e" strokeWidth="1.8" strokeLinecap="round"/></svg>
+            <div style={{textAlign:'left'}}>
+              <div style={{fontSize:11,color:'#92400e',fontWeight:500}}>Esta oferta vence el</div>
+              <div style={{fontSize:16,color:'#92400e',fontWeight:700}}>30 de junio de 2026</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style={{margin:'0 20px 28px',borderRadius:14,background:C.g50,padding:18}}>
+        <p style={{fontSize:13,fontWeight:600,color:C.g900,marginBottom:18}}>Simula tu crédito</p>
+        <div style={{display:'flex',flexDirection:'column',gap:22}}>
+          {/* U5 FIX: slider con valor exacto editable */}
+          <SliderPlus label="Monto a financiar" value={monto} min={10000000} max={42000000} step={100000} isMoney onChange={onMontoChange} />
+          <SliderPlus label="Plazo" value={plazo} min={12} max={60} step={1} suffix=" meses" onChange={onPlazoChange} />
+        </div>
+        <div style={{marginTop:18,background:C.white,borderRadius:10,padding:14,textAlign:'center'}}>
+          <div style={{fontSize:11,color:C.g500,marginBottom:4}}>Tu cuota estimada</div>
+          <div style={{fontSize:30,fontWeight:700,color:C.magenta,letterSpacing:'-0.5px'}}>{fmt(cuota)}<span style={{fontSize:14,fontWeight:400,color:C.g500}}>/mes</span></div>
+          <div style={{fontSize:11,color:C.g500,marginTop:6}}>Los valores finales se confirman al cierre del trámite.</div>
+        </div>
+      </div>
+      <div style={{margin:'0 20px 28px'}}>
+        {/* U3 FIX: copy del Paso 1 — más confianza, menos jerga, sin redundancia */}
+        <p style={{fontSize:13,fontWeight:600,color:C.g900,marginBottom:16}}>Para activar tu crédito faltan 3 pasos:</p>
+        {[
+          'Confirmas que quieres usar tu cupo aprobado.',
+          'Eliges el carro de nuestro catálogo y subes tu cédula vigente.',
+          'Validamos en línea y coordinamos el desembolso con el concesionario.'
+        ].map((t,i)=>(
+          <div key={i} style={{display:'flex',gap:14,alignItems:'flex-start',marginBottom:14}}>
+            <div style={{width:28,height:28,borderRadius:'50%',background:C.magentaL,border:`1.5px solid ${C.magenta}`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><span style={{fontSize:12,fontWeight:700,color:C.magenta}}>{i+1}</span></div>
+            <p style={{fontSize:13,color:C.g700,lineHeight:1.6,paddingTop:4}}>{t}</p>
+          </div>
+        ))}
+        <p style={{fontSize:12,color:C.g500,marginTop:4}}>Tiempo estimado total: 24 horas hábiles desde que confirmas.</p>
+      </div>
+      <div style={{padding:'0 20px',display:'flex',flexDirection:'column',gap:12}}>
+        <button onClick={onActivar} style={{width:'100%',padding:15,borderRadius:12,background:C.magenta,color:'#fff',fontSize:15,fontWeight:600,border:'none',cursor:'pointer',boxShadow:'0 4px 14px rgba(238,37,42,0.3)'}}>Activar mi crédito de carro</button>
+        <button onClick={()=>setModal(true)} style={{width:'100%',padding:13,borderRadius:12,background:'transparent',color:C.g700,fontSize:14,border:`1px solid ${C.g200}`,cursor:'pointer'}}>Ver condiciones completas</button>
+      </div>
+      <div style={{padding:'20px 20px 0',textAlign:'center'}}>
+        <p style={{fontSize:12,color:C.g500}}><span style={{color:C.blue,textDecoration:'underline',cursor:'pointer'}}>Tratamiento de datos personales</span></p>
+        <p style={{fontSize:11,color:C.g500,marginTop:8,lineHeight:1.5}}>*Tasa sujeta a verificación final del vehículo y perfil definitivo.</p>
+      </div>
+      {modal&&<div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.4)',zIndex:200,display:'flex',alignItems:'flex-end'}} onClick={()=>setModal(false)}>
+        <div style={{background:C.white,borderRadius:'20px 20px 0 0',padding:'24px 20px 40px',width:'100%'}} onClick={e=>e.stopPropagation()}>
+          <div style={{width:40,height:4,background:C.g200,borderRadius:2,margin:'0 auto 20px'}} />
+          <h3 style={{fontSize:17,fontWeight:600,color:C.g900,marginBottom:12}}>Condiciones del crédito</h3>
+          <p style={{fontSize:13,color:C.g700,lineHeight:1.7,marginBottom:12}}>Esta pre-aprobación fue generada con datos internos de Banco Finandina conforme a la Ley 1266 de 2008. Los valores mostrados son orientativos y estarán sujetos a verificación final.</p>
+          <button onClick={()=>setModal(false)} style={{width:'100%',padding:14,borderRadius:12,background:C.g200,border:'none',fontSize:14,fontWeight:500,color:C.g900,cursor:'pointer'}}>Cerrar</button>
+        </div>
+      </div>}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   P2 — Confirmación (cliente)
+   ═══════════════════════════════════════════════════════ */
+function P2Mobile({ monto,plazo,onBack,onEstado }) {
+  const cuota=calcCuota(monto,plazo);
+  const [cedF,setCedF]=useState(false);const [cedB,setCedB]=useState(false);
+  // U5 FIX: vehículo del catálogo en lugar de foto
+  const [vehiculo,setVehiculo]=useState(null);
+  const [ch1,setCh1]=useState(false);const [ch2,setCh2]=useState(false);
+  const [status,setStatus]=useState('idle');
+  // U1, U4, U6 FIX: confirmación + toast
+  const [confirmActivar,setConfirmActivar]=useState(false);
+  const [toasts,setToasts]=useState([]);
+  function pushToast(msg){ const id=Date.now(); setToasts(t=>[...t,{id,msg}]); }
+  const all=cedF&&cedB&&vehiculo&&ch1&&ch2;
+
+  if(status==='loading') return <div style={{background:C.white,minHeight:'100%',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:20,padding:40}}><div style={{width:44,height:44,borderRadius:'50%',border:`3px solid ${C.g200}`,borderTopColor:C.magenta,animation:'spin 0.8s linear infinite'}} /><p style={{fontSize:14,color:C.g700,textAlign:'center',lineHeight:1.6}}>Estamos creando tu expediente.<br />No cierres esta pantalla.</p></div>;
+  if(status==='success') return <div style={{background:C.white,minHeight:'100%',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'40px 28px',textAlign:'center'}}>
+    <div style={{width:72,height:72,borderRadius:'50%',background:C.successL,border:`2px solid ${C.success}`,display:'flex',alignItems:'center',justifyContent:'center',marginBottom:24}}><svg width="32" height="32" viewBox="0 0 32 32" fill="none"><path d="M6 16l8 8 12-12" stroke={C.success} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg></div>
+    <h2 style={{fontSize:22,fontWeight:700,color:C.g900,marginBottom:12}}>Listo, Carlos.</h2>
+    <p style={{fontSize:14,color:C.g700,lineHeight:1.7,marginBottom:24}}>Tu crédito está en revisión. Te contactaremos en las próximas 24 horas hábiles.</p>
+    <button onClick={onEstado} style={{width:'100%',padding:14,borderRadius:12,background:C.magenta,color:'#fff',fontSize:14,fontWeight:600,border:'none',cursor:'pointer',boxShadow:'0 4px 14px rgba(238,37,42,0.25)'}}>Ver estado de mi solicitud</button>
+  </div>;
+  return (
+    <div style={{background:C.g50,minHeight:'100%',paddingBottom:40}}>
+      <div style={{paddingTop:68,background:C.white,borderBottom:`1px solid ${C.g200}`,padding:'68px 20px 16px'}}>
+        <button onClick={onBack} style={{background:'none',border:'none',cursor:'pointer',display:'flex',alignItems:'center',gap:6,color:C.magenta,fontSize:14,padding:0,marginBottom:12}}>
+          <svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M6 2L2 7l4 5" stroke={C.magenta} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>Volver
+        </button>
+        <h2 style={{fontSize:20,fontWeight:700,color:C.g900}}>Activa tu crédito de carro</h2>
+        <p style={{fontSize:13,color:C.g700,marginTop:4}}>Solo necesitamos elegir el carro, tu cédula y dos confirmaciones.</p>
+      </div>
+      <div style={{padding:'20px 16px',display:'flex',flexDirection:'column',gap:16}}>
+        <div style={{background:C.white,borderRadius:14,padding:16,boxShadow:'0 1px 6px rgba(0,0,0,0.05)'}}>
+          <p style={{fontSize:11,fontWeight:600,color:C.g500,textTransform:'uppercase',letterSpacing:'0.7px',marginBottom:12}}>Estás activando este crédito:</p>
+          {[['Monto a financiar',fmt(monto)],['Plazo',`${plazo} meses`],['Cuota estimada',`${fmt(cuota)}/mes`]].map(([l,v])=>(
+            <div key={l} style={{display:'flex',justifyContent:'space-between',padding:'7px 0',borderBottom:`1px solid ${C.g200}`,fontSize:13}}><span style={{color:C.g700}}>{l}</span><span style={{color:C.g900,fontWeight:500}}>{v}</span></div>
+          ))}
+          <button onClick={onBack} style={{background:'none',border:'none',cursor:'pointer',color:C.blue,fontSize:13,padding:0,marginTop:8}}>Ajustar valores →</button>
+        </div>
+        {/* U3, U4, U5 FIX: catálogo de vehículos */}
+        <div style={{background:C.white,borderRadius:14,padding:16,boxShadow:'0 1px 6px rgba(0,0,0,0.05)',position:'relative'}}>
+          <span className="rite-tag">RITE U3·U4·U5</span>
+          <p style={{fontSize:14,fontWeight:600,color:C.g900,marginBottom:4}}>1. Elige el carro que te interesa</p>
+          <p style={{fontSize:12,color:C.g500,marginBottom:14,lineHeight:1.5}}>Antes pedíamos una foto. Ahora puedes elegir directamente del catálogo de aliados Finandina.</p>
+          <VehicleCatalog monto={monto} selected={vehiculo} onSelect={(v)=>{setVehiculo(v);pushToast('Vehículo seleccionado');}} />
+        </div>
+        <div style={{background:C.white,borderRadius:14,padding:16,boxShadow:'0 1px 6px rgba(0,0,0,0.05)'}}>
+          <p style={{fontSize:14,fontWeight:600,color:C.g900,marginBottom:4}}>2. Foto de tu cédula vigente</p>
+          {/* U3 FIX: copy más cálido, menos "requisito regulatorio" */}
+          <p style={{fontSize:12,color:C.g500,marginBottom:14,lineHeight:1.5}}>Por ambas caras, para confirmar que eres tú.</p>
+          <div style={{display:'flex',gap:10}}>
+            <UploadSlot label="Frontal" onUploaded={()=>{setCedF(true);pushToast('Cédula frontal recibida');}} />
+            <UploadSlot label="Reverso" onUploaded={()=>{setCedB(true);pushToast('Cédula reverso recibido');}} />
+          </div>
+        </div>
+        <div style={{background:C.white,borderRadius:14,padding:16,boxShadow:'0 1px 6px rgba(0,0,0,0.05)'}}>
+          <p style={{fontSize:14,fontWeight:600,color:C.g900,marginBottom:14}}>Antes de continuar</p>
+          {[{v:ch1,s:setCh1,t:'Declaro que los recursos con los que pagaré este crédito provienen de actividades lícitas.'},{v:ch2,s:setCh2,t:'Autorizo que Banco Finandina coordine el desembolso directamente con el concesionario.'}].map(({v,s,t},i)=>(
+            <div key={i} onClick={()=>s(!v)} style={{display:'flex',gap:12,alignItems:'flex-start',marginBottom:14,cursor:'pointer'}}>
+              <div style={{width:20,height:20,borderRadius:5,flexShrink:0,marginTop:1,background:v?C.magenta:C.white,border:`2px solid ${v?C.magenta:C.g200}`,display:'flex',alignItems:'center',justifyContent:'center',transition:'all 0.15s'}}>
+                {v&&<svg width="11" height="8" viewBox="0 0 11 8" fill="none"><path d="M1 4l3 3 6-6" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+              </div>
+              <p style={{fontSize:12,color:C.g700,lineHeight:1.6}}>{t}</p>
+            </div>
+          ))}
+          {/* U3 FIX: explicación de "requisito regulatorio" */}
+          <p style={{fontSize:11,color:C.g500,lineHeight:1.5}}>Estas autorizaciones son obligatorias por ley para todo crédito en Colombia.</p>
+        </div>
+        <div style={{display:'flex',flexDirection:'column',gap:10}}>
+          <button onClick={()=>{if(!all)return; setConfirmActivar(true);}} style={{width:'100%',padding:15,borderRadius:12,background:all?C.magenta:C.g200,color:all?'#fff':C.g500,fontSize:15,fontWeight:600,border:'none',cursor:all?'pointer':'not-allowed',boxShadow:all?'0 4px 14px rgba(238,37,42,0.3)':'none',transition:'all 0.2s'}}>Activar mi crédito</button>
+          <button style={{width:'100%',padding:13,borderRadius:12,background:'transparent',color:C.g700,fontSize:14,border:`1px solid ${C.g200}`,cursor:'pointer'}}>Guardar y continuar más tarde</button>
+          {!all&&<p style={{fontSize:12,color:C.g500,textAlign:'center',lineHeight:1.5}}>Falta: {!vehiculo?'elegir vehículo · ':''}{!cedF||!cedB?'subir cédula · ':''}{(!ch1||!ch2)?'aceptar términos':''}</p>}
+        </div>
+      </div>
+      {/* U1, U4 FIX: doble confirmación al activar */}
+      {confirmActivar && <ConfirmModal
+        title="¿Activar tu crédito?"
+        body={`Confirmas que quieres financiar ${vehiculo} por ${fmt(monto)} a ${plazo} meses, con cuota estimada de ${fmt(cuota)}/mes. Una vez confirmado, tu expediente entra en revisión.`}
+        confirmLabel="Sí, activar mi crédito"
+        onConfirm={()=>{setConfirmActivar(false);setStatus('loading');setTimeout(()=>setStatus('success'),2000);}}
+        onCancel={()=>setConfirmActivar(false)}
+      />}
+      {/* U1 FIX: toasts confirmando cada acción */}
+      {toasts.map(t=><Toast key={t.id} msg={t.msg} onDone={()=>setToasts(p=>p.filter(x=>x.id!==t.id))} />)}
+    </div>
+  );
+}
+
+/* P2 desktop simplified - same logic */
+function P2Desktop({ monto,plazo,onBack,onEstado }) {
+  return (
+    <div style={{background:C.g50,minHeight:'100%',paddingBottom:40}}>
+      <div style={{maxWidth:760,margin:'0 auto'}}>
+        <P2Mobile monto={monto} plazo={plazo} onBack={onBack} onEstado={onEstado} />
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   P1 DESKTOP — same fixes as mobile
+   ═══════════════════════════════════════════════════════ */
+function P1Desktop({ monto,plazo,onMontoChange,onPlazoChange,onActivar }) {
+  const cuota=calcCuota(monto,plazo);
+  return (
+    <div style={{background:C.g50,minHeight:'100%',paddingBottom:60}}>
+      <div style={{background:C.white,borderBottom:`1px solid ${C.g200}`,padding:'0 60px',height:64,display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+        <Logo size={18} />
+        <div style={{display:'flex',alignItems:'center',gap:8,background:'#fffbeb',border:'1px solid #fcd34d',borderRadius:8,padding:'6px 12px'}}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#92400e" strokeWidth="1.8"/><path d="M12 7v5l3 2" stroke="#92400e" strokeWidth="1.8" strokeLinecap="round"/></svg>
+          <span style={{fontSize:13,color:'#92400e'}}>Tu oferta vence el <strong>30 de junio de 2026</strong></span>
+        </div>
+      </div>
+      <div style={{maxWidth:1120,margin:'0 auto',padding:'48px 40px 0',display:'grid',gridTemplateColumns:'1fr 1fr',gap:60,alignItems:'start'}}>
+        <div>
+          <span style={{display:'inline-block',fontSize:11,fontWeight:600,color:C.magenta,letterSpacing:'1px',textTransform:'uppercase',background:C.magentaL,borderRadius:6,padding:'4px 10px',marginBottom:20}}>Crédito de carro pre-aprobado</span>
+          <h1 style={{fontSize:40,fontWeight:700,color:C.g900,lineHeight:1.15,marginBottom:14}}>Hola, Carlos.<br/>Tu crédito de carro está listo.</h1>
+          <p style={{fontSize:16,color:C.g700,lineHeight:1.7,marginBottom:28}}>Tu historial con Finandina te habilita un crédito <strong>exclusivo para la compra de carro</strong>, calculado con tu información interna sin consultas a centrales de riesgo externas.</p>
+          <div style={{marginBottom:32}}>
+            <p style={{fontSize:14,fontWeight:600,color:C.g900,marginBottom:16}}>Para activar tu crédito faltan 3 pasos:</p>
+            {['Confirmas que quieres usar tu cupo aprobado.','Eliges el carro de nuestro catálogo y subes tu cédula vigente.','Validamos en línea y coordinamos el desembolso con el concesionario.'].map((t,i)=>(
+              <div key={i} style={{display:'flex',gap:16,alignItems:'flex-start',marginBottom:14}}>
+                <div style={{width:32,height:32,borderRadius:'50%',background:C.magentaL,border:`1.5px solid ${C.magenta}`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><span style={{fontSize:13,fontWeight:700,color:C.magenta}}>{i+1}</span></div>
+                <p style={{fontSize:14,color:C.g700,lineHeight:1.6,paddingTop:5}}>{t}</p>
+              </div>
+            ))}
+            <p style={{fontSize:13,color:C.g500,marginTop:4}}>Tiempo estimado total: 24 horas hábiles.</p>
+          </div>
+          <div style={{display:'flex',gap:12}}>
+            <button onClick={onActivar} style={{padding:'14px 32px',borderRadius:12,background:C.magenta,color:'#fff',fontSize:15,fontWeight:600,border:'none',cursor:'pointer',boxShadow:'0 4px 16px rgba(238,37,42,0.3)'}}>Activar mi crédito de carro</button>
+            <button style={{padding:'14px 20px',borderRadius:12,background:'transparent',color:C.g700,fontSize:14,border:`1px solid ${C.g200}`,cursor:'pointer'}}>Ver condiciones</button>
+          </div>
+        </div>
+        <div style={{display:'flex',flexDirection:'column',gap:16}}>
+          <div style={{borderRadius:16,background:C.white,boxShadow:'0 4px 24px rgba(0,0,0,0.08)',overflow:'hidden'}}>
+            <div style={{background:C.magenta,padding:'16px 24px'}}><span style={{fontSize:12,color:'rgba(255,255,255,0.85)',fontWeight:500,textTransform:'uppercase',letterSpacing:'0.8px'}}>Cupo disponible</span></div>
+            <div style={{padding:'28px 24px 22px',textAlign:'center'}}>
+              <div style={{fontSize:56,fontWeight:700,color:C.g900,letterSpacing:'-2px',lineHeight:1}}>{fmt(42000000)}</div>
+              <div style={{fontSize:13,color:C.g500,marginTop:8}}>Hasta 60 meses · Tasa desde <strong style={{color:C.g700}}>15,2 % E.A.*</strong></div>
+            </div>
+          </div>
+          <div style={{borderRadius:16,background:C.white,boxShadow:'0 4px 24px rgba(0,0,0,0.08)',padding:24}}>
+            <p style={{fontSize:14,fontWeight:600,color:C.g900,marginBottom:20}}>Simula tu crédito</p>
+            <div style={{display:'flex',flexDirection:'column',gap:24}}>
+              <SliderPlus label="Monto a financiar" value={monto} min={10000000} max={42000000} step={100000} isMoney onChange={onMontoChange} />
+              <SliderPlus label="Plazo" value={plazo} min={12} max={60} step={1} suffix=" meses" onChange={onPlazoChange} />
+            </div>
+            <div style={{marginTop:20,background:C.g50,borderRadius:10,padding:16,textAlign:'center'}}>
+              <div style={{fontSize:12,color:C.g500,marginBottom:4}}>Tu cuota estimada</div>
+              <div style={{fontSize:32,fontWeight:700,color:C.magenta}}>{fmt(cuota)}<span style={{fontSize:15,fontWeight:400,color:C.g500}}>/mes</span></div>
+              <div style={{fontSize:12,color:C.g500,marginTop:6}}>Los valores finales se confirman al cierre del trámite.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* Estado screen */
+function EstadoScreen({ desktop=false, onBack, paused=false }) {
+  const STEPS=[
+    {label:'Crédito activado',date:'28 abr 2026',done:true},
+    {label:'En análisis',date:'Hoy — en progreso',active:true},
+    {label:'Aprobación final',date:'Estimado: 29 abr'},
+    {label:'Coordinación del desembolso',date:'Estimado: 30 abr'},
+  ];
+  return (
+    <div style={{background:desktop?C.g50:C.white,minHeight:'100%',paddingBottom:40}}>
+      <div style={{background:C.white,borderBottom:`1px solid ${C.g200}`,padding:desktop?'0 0 0':'68px 20px 0 20px'}}>
+        {!desktop&&<button onClick={onBack} style={{background:'none',border:'none',cursor:'pointer',display:'flex',alignItems:'center',gap:6,color:C.magenta,fontSize:14,padding:'0 0 14px'}}><svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M6 2L2 7l4 5" stroke={C.magenta} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>Volver</button>}
+        <div style={{padding:desktop?'24px 0 20px':'0 0 16px'}}>
+          <span style={{fontSize:11,fontWeight:600,color:C.magenta,textTransform:'uppercase',letterSpacing:'0.8px'}}>Tu solicitud · SOL-2024-0891</span>
+          <h2 style={{fontSize:desktop?26:20,fontWeight:700,color:C.g900,marginTop:6,marginBottom:4}}>Hola, Carlos. Tu crédito está en análisis.</h2>
+          <p style={{fontSize:14,color:C.g700}}>Respuesta estimada en las próximas <strong>12 horas hábiles</strong>.</p>
+        </div>
+      </div>
+      <div style={{padding:desktop?'28px 0':'20px 16px',display:'flex',flexDirection:desktop?'row':'column',gap:desktop?32:16}}>
+        {paused&&<div style={{flex:'1 1 100%',background:'#fffbeb',border:'1px solid #fcd34d',borderRadius:12,padding:'14px 16px',display:'flex',gap:12,alignItems:'flex-start',marginBottom:desktop?0:4}}>
+          <span style={{fontSize:20}}>⏸</span>
+          <div style={{flex:1}}>
+            <div style={{fontSize:13,fontWeight:700,color:'#92400e',marginBottom:3}}>Estamos consultando con un proveedor externo</div>
+            <p style={{fontSize:12,color:'#92400e',lineHeight:1.55,marginBottom:8}}>No tienes que hacer nada. Te avisaremos por SMS cuando podamos continuar.</p>
+            <a href="Finscope P10 - Espera.html" style={{fontSize:12,fontWeight:600,color:'#92400e',textDecoration:'underline'}}>Ver detalle de la espera →</a>
+          </div>
+        </div>}
+        <div style={{flex:desktop?'0 0 340px':undefined,background:C.white,borderRadius:14,padding:20,border:`1px solid ${C.g200}`}}>
+          <p style={{fontSize:12,fontWeight:600,color:C.g500,textTransform:'uppercase',letterSpacing:'0.7px',marginBottom:18}}>Progreso de tu solicitud</p>
+          {STEPS.map((s,i)=>(
+            <div key={i} style={{display:'flex',gap:14,marginBottom:i<STEPS.length-1?20:0}}>
+              <div style={{display:'flex',flexDirection:'column',alignItems:'center'}}>
+                <div style={{width:28,height:28,borderRadius:'50%',background:s.done?C.success:s.active?C.magentaL:C.g200,border:s.active?`2px solid ${C.magenta}`:'none',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                  {s.done?<svg width="13" height="10" viewBox="0 0 13 10" fill="none"><path d="M1 5l4 4 7-8" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  :s.active?<div style={{width:8,height:8,borderRadius:'50%',background:C.magenta}} />
+                  :<div style={{width:8,height:8,borderRadius:'50%',background:C.g500}} />}
+                </div>
+                {i<STEPS.length-1&&<div style={{width:2,flex:1,minHeight:20,background:s.done?C.success:C.g200,margin:'4px 0'}} />}
+              </div>
+              <div style={{paddingTop:4}}>
+                <p style={{fontSize:14,fontWeight:s.active?600:400,color:s.done||s.active?C.g900:C.g500}}>{s.label}</p>
+                <p style={{fontSize:12,color:s.active?C.magenta:C.g500,marginTop:2}}>{s.date}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div style={{flex:1,display:'flex',flexDirection:'column',gap:14}}>
+          <div style={{background:C.white,borderRadius:14,padding:20,border:`1px solid ${C.g200}`}}>
+            <p style={{fontSize:12,fontWeight:600,color:C.g500,textTransform:'uppercase',letterSpacing:'0.7px',marginBottom:14}}>Detalle de tu crédito</p>
+            {[['Monto solicitado','$35.000.000'],['Plazo','48 meses'],['Cuota estimada','$942.000/mes'],['Vehículo','Mazda CX-30 2024'],['Tasa desde','15,2 % E.A.*']].map(([l,v])=>(
+              <div key={l} style={{display:'flex',justifyContent:'space-between',padding:'7px 0',borderBottom:`1px solid ${C.g200}`,fontSize:13}}><span style={{color:C.g500}}>{l}</span><span style={{color:C.g900,fontWeight:500}}>{v}</span></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* Desktop wrapper */
+function DesktopView({ screen, onScreenChange, monto, plazo, onMontoChange, onPlazoChange }) {
+  return (
+    <div style={{height:'100vh',display:'flex',flexDirection:'column',background:'#2C2C2E'}}>
+      <div style={{flexShrink:0,background:'#3A3A3C',padding:'10px 16px',display:'flex',alignItems:'center',gap:12}}>
+        <div style={{display:'flex',gap:6}}>{['#FF5F57','#FFBD2E','#28C840'].map(c=><div key={c} style={{width:12,height:12,borderRadius:'50%',background:c}} />)}</div>
+        <div style={{flex:1,background:'#2C2C2E',borderRadius:8,padding:'6px 14px'}}>
+          <span style={{fontSize:12,color:'#8E8E93',textAlign:'center',display:'block'}}>app.finscope.co/credito-carro/{screen}</span>
+        </div>
+      </div>
+      <div style={{flex:1,overflowY:'auto',background:C.g50}}>
+        {screen==='p1'&&<P1Desktop monto={monto} plazo={plazo} onMontoChange={onMontoChange} onPlazoChange={onPlazoChange} onActivar={()=>onScreenChange('p2')} />}
+        {screen==='p2'&&<P2Desktop monto={monto} plazo={plazo} onBack={()=>onScreenChange('p1')} onEstado={()=>onScreenChange('estado')} />}
+        {screen==='estado'&&<div style={{padding:'40px 60px'}}><EstadoScreen desktop onBack={()=>onScreenChange('p1')} /></div>}
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  const [monto,setMonto]=useState(35000000);
+  const [plazo,setPlazo]=useState(48);
+  const [screen,setScreen]=useState('p1');
+  const [device,setDevice]=useState('desktop');
+
+  if(device==='desktop') return (
+    <div style={{height:'100vh',overflow:'hidden',background:'#EDECEA',display:'flex',flexDirection:'column'}} data-screen-label="Cliente B2C v2 RITE">
+      <div style={{background:'#EDECEA',padding:'10px 20px',display:'flex',alignItems:'center',gap:14,flexShrink:0}}>
+        <Logo size={14} />
+        <span style={{fontSize:12,color:'#7a7874'}}>v2 — Correcciones RITE · Cliente B2C</span>
+        <span style={{color:C.g200}}>|</span>
+        {['p1','p2','estado'].map(s=>(
+          <button key={s} onClick={()=>setScreen(s)} style={{padding:'4px 12px',borderRadius:20,fontSize:12,border:`1px solid ${screen===s?C.magenta:C.g200}`,background:screen===s?C.magentaL:C.white,color:screen===s?C.magenta:C.g700,cursor:'pointer',fontWeight:screen===s?600:400,fontFamily:'Roboto'}}>
+            {s==='p1'?'P1 Landing':s==='p2'?'P2 Activación':'Estado'}
+          </button>
+        ))}
+        <div style={{flex:1}} />
+        <a href="RITE - Resumen.html" style={{fontSize:12,color:C.blue,textDecoration:'none',fontWeight:500}}>📋 Resumen RITE</a>
+        <a href="Finscope P3 - Analista v2 - RITE.html" style={{fontSize:12,color:C.blue,textDecoration:'none',fontWeight:500}}>P3 v2 →</a>
+        <a href="Finscope P4 - Coordinador v2 - RITE.html" style={{fontSize:12,color:C.blue,textDecoration:'none',fontWeight:500}}>P4 v2 →</a>
+        <button onClick={()=>setDevice('mobile')} style={{display:'flex',alignItems:'center',gap:6,background:C.white,border:`1px solid ${C.g200}`,borderRadius:8,padding:'6px 12px',fontSize:12,color:C.g700,cursor:'pointer',fontFamily:'Roboto'}}>📱 Móvil</button>
+      </div>
+      <div style={{flex:1,overflow:'hidden'}}>
+        <DesktopView screen={screen} onScreenChange={setScreen} monto={monto} plazo={plazo} onMontoChange={setMonto} onPlazoChange={setPlazo} />
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{width:'100vw',height:'100vh',overflow:'auto',display:'flex',flexDirection:'column',alignItems:'center',background:'#EDECEA',padding:'20px 40px 40px',gap:20}} data-screen-label="Cliente B2C v2 móvil">
+      <div style={{display:'flex',alignItems:'center',gap:14,flexWrap:'wrap',justifyContent:'center'}}>
+        <Logo size={14} />
+        <span style={{fontSize:12,color:'#7a7874'}}>v2 RITE — Móvil</span>
+        <a href="RITE - Resumen.html" style={{fontSize:12,color:C.blue,textDecoration:'none'}}>Resumen RITE</a>
+        <button onClick={()=>setDevice('desktop')} style={{background:C.white,border:`1px solid ${C.g200}`,borderRadius:8,padding:'5px 12px',fontSize:12,color:C.g700,cursor:'pointer',fontFamily:'Roboto'}}>🖥 Desktop</button>
+      </div>
+      <div style={{display:'flex',alignItems:'flex-start',gap:30,flexWrap:'wrap',justifyContent:'center'}}>
+        <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:12}}>
+          <div style={{fontSize:11,fontWeight:600,letterSpacing:'0.8px',textTransform:'uppercase',color:screen==='p1'?C.magenta:'#7a7874'}}>P1 — Landing</div>
+          <IOSDevice width={375} height={812}><P1Mobile monto={monto} plazo={plazo} onMontoChange={setMonto} onPlazoChange={setPlazo} onActivar={()=>setScreen('p2')} /></IOSDevice>
+        </div>
+        <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:12}}>
+          <div style={{fontSize:11,fontWeight:600,letterSpacing:'0.8px',textTransform:'uppercase',color:screen==='p2'?C.magenta:'#7a7874'}}>P2 — Activación</div>
+          <IOSDevice width={375} height={812}><P2Mobile monto={monto} plazo={plazo} onBack={()=>setScreen('p1')} onEstado={()=>setScreen('estado')} /></IOSDevice>
+        </div>
+        <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:12}}>
+          <div style={{fontSize:11,fontWeight:600,letterSpacing:'0.8px',textTransform:'uppercase',color:screen==='estado'?C.magenta:'#7a7874'}}>Estado</div>
+          <IOSDevice width={375} height={812}><div style={{paddingTop:65}}><EstadoScreen onBack={()=>setScreen('p1')} /></div></IOSDevice>
+        </div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+# Next.js
+.next/
+out/
+
+# Dependencias
+node_modules/
+
+# Entorno
+.env
+.env.local
+.env.*.local
+
+# Build
+dist/
+build/
+*.tsbuildinfo
+next-env.d.ts
+
+# Cache
+.swc/
+.turbo/
+.vercel/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Finscope — P6 Dashboard Ejecutivo</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet"/>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Roboto',sans-serif;background:#F5F4F2;}
+    ::-webkit-scrollbar{width:5px;} ::-webkit-scrollbar-thumb{background:#DEDBD7;border-radius:3px;}
+    @keyframes slideIn{from{transform:translateX(100%);}to{transform:translateX(0);}}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+  </style>
+</head>
+<body><div id="root"></div>
+<script type="text/babel">
+const { useState } = React;
+const C = {magenta:'#ee252a',magentaL:'rgba(238,37,42,0.08)',blue:'#3f5cdd',yellow:'#FFAE00',g900:'#212121',g700:'#616161',g500:'#9E9E9E',g200:'#EEEEEE',g50:'#FAFAFA',white:'#FFFFFF'};
+
+const ROWS = [
+  {id:'SOL-2024-0891',name:'Carlos Mejía',    tipo:'Pre-aprobado', etapa:'En análisis',         semaforo:'yellow',accion:'Ver detalle',   updated:'Hace 2 h', docs:[]},
+  {id:'SOL-2024-0892',name:'Ana Rodríguez',   tipo:'Nuevo',        etapa:'Documentos por reponer',semaforo:'red',  accion:'Reponer doc',   updated:'Hace 1 h', docs:['Certificado laboral vencido'], lastContact:'Hace 6 días — sin respuesta'},
+  {id:'SOL-2024-0897',name:'Laura Herrera',   tipo:'Pre-aprobado', etapa:'En coordinación',      semaforo:'yellow',accion:'Ver detalle',   updated:'Hace 4 h', docs:[]},
+  {id:'SOL-2024-0903',name:'Mateo García',    tipo:'Nuevo',        etapa:'Aprobada',             semaforo:'green', accion:'Ver detalle',   updated:'Hace 6 h', docs:[]},
+  {id:'SOL-2024-0871',name:'Natalia Ruiz',    tipo:'Renovación',   etapa:'Desembolso programado',semaforo:'green', accion:'Ver detalle',   updated:'Ayer',     docs:[]},
+  {id:'SOL-2024-0845',name:'Ricardo Blanco',  tipo:'Nuevo',        etapa:'Rechazada',            semaforo:'red',   accion:'Ver detalle',   updated:'Ayer',     docs:[]},
+];
+
+const semaforoProps = {
+  green: {bg:'#f0fdf4',color:'#22c55e',dot:'#22c55e'},
+  yellow:{bg:'#fffbeb',color:'#f59e0b',dot:'#f59e0b'},
+  red:   {bg:'#fef2f2',color:'#ef4444',dot:'#ef4444'},
+  gray:  {bg:C.g50,    color:C.g500,   dot:C.g200},
+};
+
+const TIMELINE = [
+  {label:'Solicitud radicada',    date:'25 abr',done:true},
+  {label:'En análisis crediticio',date:'26 abr',done:true},
+  {label:'En coordinación',       date:'27 abr',done:true},
+  {label:'Revisión operativa',    date:'28 abr — en progreso',active:true},
+  {label:'Desembolso programado', date:'Estimado: 29 abr'},
+];
+
+function Logo() {
+  return (
+    <div style={{display:'flex',alignItems:'center',gap:8}}>
+      <div style={{background:'#fff',borderRadius:7,padding:3,boxShadow:'0 1px 4px rgba(0,0,0,0.10)',display:'flex'}}>
+        <img src="uploads/imagen.png" width={26} height={26} alt="Finscope" style={{display:'block'}}/>
+      </div>
+      <span style={{fontWeight:700,fontSize:17,color:C.g900,letterSpacing:'-0.4px'}}>Finscope</span>
+    </div>
+  );
+}
+
+function NavBar({device,setDevice}) {
+  const pages=[
+    {label:'P1–P2 Cliente',href:'Finscope Prototype.html'},
+    {label:'P3 Analista',href:'Finscope P3 - Analista.html'},
+    {label:'P4 Coordinador',href:'Finscope P4 - Coordinador.html'},
+    {label:'P5 Radicación',href:'Finscope P5 - Ejecutivo.html'},
+    {label:'P6 Ejecutivo',href:'Finscope P6 - Ejecutivo Dashboard.html',active:true},
+    {label:'P7 Op. Revisión',href:'Finscope P7 - Operativo.html'},
+    {label:'P8 Desembolso',href:'Finscope P8 - Desembolso.html'},
+    {label:'P9 Excepción',href:'Finscope P9 - Excepcion.html'},
+  ];
+  return (
+    <div style={{height:52,background:C.white,borderBottom:`1px solid ${C.g200}`,display:'flex',alignItems:'center',padding:'0 16px',gap:16,position:'fixed',top:0,left:0,right:0,zIndex:100,overflow:'hidden'}}>
+      <Logo/>
+      <div style={{display:'flex',gap:0,height:'100%',alignItems:'center',flex:1,overflow:'hidden'}}>
+        {pages.map(p=><a key={p.label} href={p.href} style={{padding:'0 10px',height:'100%',display:'flex',alignItems:'center',fontSize:12,fontWeight:p.active?600:400,color:p.active?C.magenta:C.g700,borderBottom:p.active?`2px solid ${C.magenta}`:'2px solid transparent',textDecoration:'none',whiteSpace:'nowrap'}}>{p.label}</a>)}
+      </div>
+      <button onClick={()=>setDevice(d=>d==='desktop'?'mobile':'desktop')} style={{flexShrink:0,display:'flex',alignItems:'center',gap:6,background:C.g50,border:`1px solid ${C.g200}`,borderRadius:8,padding:'6px 12px',fontSize:12,color:C.g700,cursor:'pointer',fontFamily:'Roboto'}}>
+        {device==='desktop'?'📱 Móvil':'🖥 Desktop'}
+      </button>
+      <div style={{display:'flex',alignItems:'center',gap:8,flexShrink:0}}>
+        <div style={{width:32,height:32,borderRadius:'50%',background:'#22c55e',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:13,fontWeight:600}}>JR</div>
+        <div style={{fontSize:13}}><div style={{fontWeight:500,color:C.g900}}>Juliana Ríos</div><div style={{fontSize:11,color:C.g500}}>Ejecutiva Comercial</div></div>
+      </div>
+    </div>
+  );
+}
+
+function Drawer({row,onClose}) {
+  const [reponerFile,setReponerFile]=useState(false);
+  const sp=semaforoProps[row.semaforo];
+  return (
+    <>
+      <div onClick={onClose} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.25)',zIndex:200}}/>
+      <div style={{position:'fixed',right:0,top:0,bottom:0,width:500,background:C.white,zIndex:201,animation:'slideIn 0.25s ease',display:'flex',flexDirection:'column',boxShadow:'-8px 0 40px rgba(0,0,0,0.10)'}}>
+        <div style={{padding:'18px 20px',borderBottom:`1px solid ${C.g200}`,display:'flex',justifyContent:'space-between',alignItems:'center',flexShrink:0}}>
+          <div>
+            <div style={{fontSize:16,fontWeight:700,color:C.g900}}>{row.name}</div>
+            <div style={{fontSize:12,color:C.g500}}>{row.id}</div>
+          </div>
+          <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',fontSize:20,color:C.g500,lineHeight:1}}>✕</button>
+        </div>
+        <div style={{flex:1,overflowY:'auto',padding:20,display:'flex',flexDirection:'column',gap:18}}>
+          {/* Status badge */}
+          <div style={{background:sp.bg,border:`1px solid ${sp.dot}30`,borderRadius:10,padding:'12px 16px',display:'flex',alignItems:'center',gap:10}}>
+            <div style={{width:10,height:10,borderRadius:'50%',background:sp.dot,flexShrink:0}}/>
+            <div>
+              <div style={{fontSize:14,fontWeight:600,color:sp.color}}>{row.etapa}</div>
+              {row.docs.length>0&&<div style={{fontSize:12,color:'#dc2626',marginTop:2}}>⚠ {row.docs[0]}</div>}
+            </div>
+          </div>
+          {/* Timeline */}
+          <div style={{background:C.white,borderRadius:12,padding:16,border:`1px solid ${C.g200}`}}>
+            <p style={{fontSize:11,fontWeight:600,color:C.g500,textTransform:'uppercase',letterSpacing:'0.7px',marginBottom:14}}>Línea de tiempo</p>
+            {TIMELINE.map((s,i)=>(
+              <div key={i} style={{display:'flex',gap:12,marginBottom:i<TIMELINE.length-1?16:0}}>
+                <div style={{display:'flex',flexDirection:'column',alignItems:'center'}}>
+                  <div style={{width:24,height:24,borderRadius:'50%',background:s.done?C.magenta:s.active?C.magentaL:C.g200,border:s.active?`2px solid ${C.magenta}`:'none',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                    {s.done?<svg width="11" height="8" viewBox="0 0 11 8" fill="none"><path d="M1 4l3 3 6-6" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    :s.active?<div style={{width:8,height:8,borderRadius:'50%',background:C.magenta}}/>
+                    :<div style={{width:7,height:7,borderRadius:'50%',background:C.g500}}/>}
+                  </div>
+                  {i<TIMELINE.length-1&&<div style={{width:2,height:18,background:s.done?C.magenta:C.g200,margin:'3px 0'}}/>}
+                </div>
+                <div style={{paddingTop:2}}>
+                  <div style={{fontSize:13,fontWeight:s.active?600:400,color:s.done||s.active?C.g900:C.g500}}>{s.label}</div>
+                  <div style={{fontSize:11,color:s.active?C.magenta:C.g500,marginTop:1}}>{s.date}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          {/* Documents */}
+          <div style={{background:C.white,borderRadius:12,padding:16,border:`1px solid ${C.g200}`}}>
+            <p style={{fontSize:11,fontWeight:600,color:C.g500,textTransform:'uppercase',letterSpacing:'0.7px',marginBottom:12}}>Documentos</p>
+            {[
+              {doc:'Cédula frontal',estado:'validado'},
+              {doc:'Cédula reverso',estado:'validado'},
+              {doc:'Foto del vehículo',estado:'validado'},
+              {doc:'Certificado laboral',estado: row.docs.length>0?'rechazado':'validado'},
+            ].map(({doc,estado})=>(
+              <div key={doc} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 0',borderBottom:`1px solid ${C.g200}`,fontSize:13}}>
+                <span style={{color:C.g700}}>{doc}</span>
+                <span style={{fontSize:12,fontWeight:500,color:estado==='validado'?'#22c55e':estado==='rechazado'?'#ef4444':'#f59e0b'}}>
+                  {estado==='validado'?'✓ Validado':estado==='rechazado'?'✕ Rechazado':'Pendiente'}
+                </span>
+              </div>
+            ))}
+            {row.docs.length>0&&(
+              <div style={{marginTop:14}}>
+                <div style={{background:'#fef2f2',border:'1px solid #fca5a5',borderRadius:8,padding:'10px 12px',fontSize:12,color:'#dc2626',marginBottom:12,lineHeight:1.5}}>
+                  Motivo del rechazo: <strong>Documento vencido.</strong> Por favor carga una versión actualizada.
+                </div>
+                {!reponerFile
+                  ? <button onClick={()=>setReponerFile(true)} style={{width:'100%',padding:'10px',borderRadius:9,background:C.magenta,color:'#fff',fontSize:13,fontWeight:600,border:'none',cursor:'pointer',fontFamily:'Roboto'}}>Subir documento actualizado</button>
+                  : <div style={{background:'#f0fdf4',border:'1px solid #86efac',borderRadius:8,padding:'10px 12px',fontSize:13,color:'#166534',textAlign:'center'}}>✓ Documento enviado al analista operativo</div>
+                }
+              </div>
+            )}
+          </div>
+          {/* Comunicaciones */}
+          <div style={{background:C.white,borderRadius:12,padding:16,border:`1px solid ${C.g200}`}}>
+            <p style={{fontSize:11,fontWeight:600,color:C.g500,textTransform:'uppercase',letterSpacing:'0.7px',marginBottom:12}}>Comunicaciones al cliente</p>
+            {[
+              {msg:'Oferta activada — bienvenido al proceso',canal:'SMS',estado:'Entregada',fecha:'25 abr'},
+              {msg:'Tu expediente está en análisis',canal:'Email',estado:'Entregada',fecha:'26 abr'},
+              {msg:'Documentos recibidos correctamente',canal:'WhatsApp',estado:'Entregada',fecha:'26 abr'},
+            ].map((n,i)=>(
+              <div key={i} style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',padding:'7px 0',borderBottom:`1px solid ${C.g200}`,fontSize:12}}>
+                <div><div style={{color:C.g900,marginBottom:2}}>{n.msg}</div><div style={{color:C.g500}}>{n.canal} · {n.fecha}</div></div>
+                <span style={{color:'#22c55e',fontWeight:500,flexShrink:0,marginLeft:8}}>{n.estado}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function DesktopLayout() {
+  const [filter,setFilter]=useState('todas');
+  const [selected,setSelected]=useState(null);
+  const metrics=[
+    {label:'Solicitudes activas',val:4,color:C.g900},
+    {label:'Requieren tu acción',val:1,color:C.magenta,accent:true},
+    {label:'Radicadas hoy',val:2,color:C.g900},
+    {label:'Desembolsadas este mes',val:'3 · $168M',color:'#22c55e'},
+  ];
+  const filtered=ROWS.filter(r=>filter==='todas'||filter==='accion'&&r.semaforo==='red'||filter==='rechazadas'&&r.etapa==='Rechazada'||filter==='desembolso'&&r.etapa.includes('Desembolso'));
+  return (
+    <div style={{marginTop:52,padding:'24px 32px',minHeight:'calc(100vh - 52px)',overflowY:'auto'}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:24}}>
+        <h1 style={{fontSize:22,fontWeight:700,color:C.g900}}>Mis solicitudes</h1>
+        <a href="Finscope P5 - Ejecutivo.html" style={{padding:'10px 20px',borderRadius:10,background:C.magenta,color:'#fff',fontSize:13,fontWeight:600,textDecoration:'none',boxShadow:`0 3px 10px rgba(238,37,42,0.25)`}}>+ Nueva solicitud</a>
+      </div>
+      {/* Metrics */}
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:16,marginBottom:24}}>
+        {metrics.map(m=>(
+          <div key={m.label} style={{background:m.accent?C.magentaL:C.white,borderRadius:14,padding:'18px 20px',border:`1px solid ${m.accent?C.magenta+'40':C.g200}`,boxShadow:'0 2px 8px rgba(0,0,0,0.04)'}}>
+            <div style={{fontSize:12,color:C.g500,marginBottom:6}}>{m.label}</div>
+            <div style={{fontSize:28,fontWeight:700,color:m.color}}>{m.val}</div>
+          </div>
+        ))}
+      </div>
+      {/* Filters */}
+      <div style={{display:'flex',gap:8,marginBottom:16}}>
+        {[['todas','Todas'],['accion','Requieren acción'],['rechazadas','Rechazadas recientes'],['desembolso','Próximas a desembolso']].map(([v,l])=>(
+          <button key={v} onClick={()=>setFilter(v)} style={{padding:'6px 14px',borderRadius:20,fontSize:13,border:`1px solid ${filter===v?C.magenta:C.g200}`,background:filter===v?C.magentaL:C.white,color:filter===v?C.magenta:C.g700,cursor:'pointer',fontFamily:'Roboto',fontWeight:filter===v?600:400}}>{l}</button>
+        ))}
+      </div>
+      {/* Table */}
+      <div style={{background:C.white,borderRadius:14,overflow:'hidden',border:`1px solid ${C.g200}`,boxShadow:'0 2px 8px rgba(0,0,0,0.04)'}}>
+        <div style={{display:'grid',gridTemplateColumns:'14px 1fr 120px 1fr 170px 130px 140px',padding:'10px 16px',borderBottom:`1px solid ${C.g200}`,background:C.g50,gap:12}}>
+          {['','Cliente','Tipo','Etapa actual','Última actualización','','Acción'].map((h,i)=>(
+            <div key={i} style={{fontSize:11,fontWeight:600,color:C.g500,textTransform:'uppercase',letterSpacing:'0.5px'}}>{h}</div>
+          ))}
+        </div>
+        {filtered.map(row=>{
+          const sp=semaforoProps[row.semaforo];
+          return (
+            <div key={row.id} style={{display:'grid',gridTemplateColumns:'14px 1fr 120px 1fr 170px 130px 140px 38px',padding:'13px 16px',borderBottom:`1px solid ${C.g200}`,alignItems:'center',gap:12}}>
+              <div style={{width:10,height:10,borderRadius:'50%',background:sp.dot}}/>
+              <div>
+                <div style={{fontSize:14,fontWeight:500,color:C.g900}}>{row.name}</div>
+                <div style={{fontSize:11,color:C.g500}}>{row.id}</div>
+              </div>
+              <div style={{fontSize:13,color:C.g700}}>{row.tipo}</div>
+              <div>
+                <span style={{fontSize:13,color:sp.color,fontWeight:500}}>{row.etapa}</span>
+                {row.docs.length>0&&<div style={{fontSize:11,color:'#ef4444',marginTop:2}}>Doc. rechazado</div>}
+              </div>
+              <div style={{fontSize:13,color:C.g500}}>{row.updated}</div>
+              <div>
+                {row.semaforo==='red'&&<span style={{fontSize:11,fontWeight:600,background:'#fef2f2',color:'#ef4444',borderRadius:6,padding:'3px 8px'}}>Acción requerida</span>}
+              </div>
+              <button onClick={()=>row.etapa==='Rechazada'?window.location.href='Finscope P9 - Excepcion.html':setSelected(row)} style={{padding:'7px 14px',borderRadius:7,background:row.semaforo==='red'?C.magenta:C.g50,color:row.semaforo==='red'?'#fff':C.g700,fontSize:12,fontWeight:500,border:`1px solid ${row.semaforo==='red'?C.magenta:C.g200}`,cursor:'pointer',fontFamily:'Roboto'}}>
+                {row.etapa==='Rechazada'?'Ver motivo':row.accion}
+              </button>
+              <a href="Finscope P11 - QR.html" title="Compartir oferta por QR/WhatsApp" style={{width:32,height:32,borderRadius:7,background:C.g50,border:`1px solid ${C.g200}`,display:'flex',alignItems:'center',justifyContent:'center',color:C.g700,textDecoration:'none',fontSize:14}}>⤴</a>
+            </div>
+          );
+        })}
+      </div>
+      {selected&&<Drawer row={selected} onClose={()=>setSelected(null)}/>}
+    </div>
+  );
+}
+
+function MobileLayout() {
+  const [selected,setSelected]=useState(null);
+  const [filter,setFilter]=useState('todas');
+  const filtered=ROWS.filter(r=>filter==='todas'||filter==='accion'&&r.semaforo==='red');
+  return (
+    <div style={{display:'flex',flexDirection:'column',height:'100%',background:C.g50}}>
+      <div style={{padding:'12px 16px',background:C.white,borderBottom:`1px solid ${C.g200}`,flexShrink:0}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+          <span style={{fontSize:15,fontWeight:700,color:C.g900}}>Mis solicitudes</span>
+          <a href="Finscope P5 - Ejecutivo.html" style={{padding:'7px 12px',borderRadius:8,background:C.magenta,color:'#fff',fontSize:12,fontWeight:600,textDecoration:'none'}}>+ Nueva</a>
+        </div>
+        <div style={{display:'flex',gap:8}}>
+          {[['todas','Todas'],['accion','Acción requerida']].map(([v,l])=>(
+            <button key={v} onClick={()=>setFilter(v)} style={{padding:'5px 12px',borderRadius:16,fontSize:12,border:`1px solid ${filter===v?C.magenta:C.g200}`,background:filter===v?C.magentaL:C.white,color:filter===v?C.magenta:C.g700,cursor:'pointer',fontFamily:'Roboto'}}>{l}</button>
+          ))}
+        </div>
+      </div>
+      <div style={{flex:1,overflowY:'auto'}}>
+        {filtered.map(row=>{
+          const sp=semaforoProps[row.semaforo];
+          return (
+            <div key={row.id} onClick={()=>setSelected(row)} style={{background:C.white,borderBottom:`1px solid ${C.g200}`,padding:'14px 16px',cursor:'pointer'}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:6}}>
+                <div style={{display:'flex',alignItems:'center',gap:8}}>
+                  <div style={{width:9,height:9,borderRadius:'50%',background:sp.dot,flexShrink:0}}/>
+                  <div style={{fontSize:14,fontWeight:600,color:C.g900}}>{row.name}</div>
+                </div>
+                {row.semaforo==='red'&&<span style={{fontSize:10,fontWeight:600,background:'#fef2f2',color:'#ef4444',borderRadius:5,padding:'2px 7px'}}>Acción requerida</span>}
+              </div>
+              <div style={{fontSize:12,color:C.g500,marginBottom:4,paddingLeft:17}}>{row.id} · {row.tipo}</div>
+              <div style={{fontSize:13,color:sp.color,fontWeight:500,paddingLeft:17}}>{row.etapa}</div>
+            </div>
+          );
+        })}
+      </div>
+      {selected&&<Drawer row={selected} onClose={()=>setSelected(null)}/>}
+    </div>
+  );
+}
+
+function App() {
+  const [device,setDevice]=useState('desktop');
+  return (
+    <>
+      <NavBar device={device} setDevice={setDevice}/>
+      {device==='desktop'
+        ?<DesktopLayout/>
+        :<div style={{display:'flex',justifyContent:'center',alignItems:'flex-start',background:'#EDECEA',padding:20,minHeight:'calc(100vh - 52px)',marginTop:52,overflowY:'auto'}}>
+           <div style={{width:390,height:760,background:C.white,borderRadius:24,overflow:'hidden',boxShadow:'0 20px 60px rgba(0,0,0,0.15)',display:'flex',flexDirection:'column'}}>
+             <MobileLayout/>
+           </div>
+         </div>}
+    </>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

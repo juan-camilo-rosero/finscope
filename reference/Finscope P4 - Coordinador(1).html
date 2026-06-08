@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Finscope — P4 Dashboard Coordinador</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Roboto',sans-serif;background:#F5F4F2;}
+    ::-webkit-scrollbar{width:5px;} ::-webkit-scrollbar-thumb{background:#DEDBD7;border-radius:3px;}
+    @keyframes slideIn{from{transform:translateX(100%);}to{transform:translateX(0);}}
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState } = React;
+const C = { magenta:'#ee252a', magentaL:'rgba(238,37,42,0.08)', yellow:'#FFAE00', blue:'#3f5cdd', g900:'#212121', g700:'#616161', g500:'#9E9E9E', g200:'#EEEEEE', g50:'#FAFAFA', white:'#FFFFFF' };
+
+const ROWS = [
+  { priority:'alta',   name:'Carlos Mejía',    id:'SOL-2024-0891', monto:'$42.000.000',  motor:'aprobar', analista:'Pedro Gómez · Acepta recomendación',      tiempo:'12 min', sarlaft:false, override:false },
+  { priority:'alta',   name:'Laura Herrera',   id:'SOL-2024-0897', monto:'$89.500.000',  motor:'aprobar', analista:'María Torres · Acepta recomendación',      tiempo:'28 min', sarlaft:false, override:false },
+  { priority:'critica',name:'Ricardo Mora',    id:'SOL-2024-0902', monto:'$31.200.000',  motor:'revisar', analista:'Luis Prado · Override: datos adicionales',  tiempo:'45 min', sarlaft:true, externa:true, override:true  },
+  { priority:'media',  name:'Paula Vásquez',   id:'SOL-2024-0889', monto:'$67.000.000',  motor:'aprobar', analista:'Carlos Reyes · Acepta recomendación',      tiempo:'1h 10m', sarlaft:false, override:false },
+  { priority:'media',  name:'Sergio Leal',     id:'SOL-2024-0878', monto:'$124.000.000', motor:'rechazar',analista:'Diana Cruz · Override: excepción comercial', tiempo:'2h',     sarlaft:false, override:true  },
+  { priority:'baja',   name:'Natalia Ruiz',    id:'SOL-2024-0871', monto:'$22.000.000',  motor:'aprobar', analista:'Ana Gómez · Acepta recomendación',         tiempo:'3h',     sarlaft:false, override:false },
+];
+
+const motorColors = { aprobar:'#22c55e', revisar:'#f59e0b', rechazar:'#ef4444', atipico:'#9E9E9E' };
+const motorLabels = { aprobar:'Aprobar', revisar:'Revisar', rechazar:'Rechazar', atipico:'Atípico' };
+const priorityColors = { critica:C.magenta, alta:'#f59e0b', media:C.blue, baja:C.g200 };
+
+function Logo() {
+  return (
+    <div style={{display:'flex',alignItems:'center',gap:8}}>
+      <div style={{background:'#fff',borderRadius:7,padding:3,boxShadow:'0 1px 4px rgba(0,0,0,0.10)',display:'flex'}}>
+        <img src="uploads/imagen.png" width={26} height={26} alt="Finscope" style={{display:'block'}} />
+      </div>
+      <span style={{fontWeight:700,fontSize:17,color:C.g900,letterSpacing:'-0.4px'}}>Finscope</span>
+    </div>
+  );
+}
+
+function NavBar({ device, setDevice }) {
+  const pages = [
+    {label:'P1+P2 Cliente',href:'Finscope Prototype.html'},
+    {label:'P3 Analista',href:'Finscope P3 - Analista.html'},
+    {label:'P4 Coordinador',href:'Finscope P4 - Coordinador.html',active:true},
+    {label:'P5 Ejecutivo',href:'Finscope P5 - Ejecutivo.html'},
+  ];
+  return (
+    <div style={{height:52,background:C.white,borderBottom:`1px solid ${C.g200}`,display:'flex',alignItems:'center',padding:'0 20px',gap:20,position:'fixed',top:0,left:0,right:0,zIndex:100}}>
+      <Logo />
+      <div style={{display:'flex',gap:2,height:'100%',alignItems:'center',flex:1}}>
+        {pages.map(p=><a key={p.label} href={p.href} style={{padding:'0 12px',height:'100%',display:'flex',alignItems:'center',fontSize:13,fontWeight:p.active?600:400,color:p.active?C.magenta:C.g700,borderBottom:p.active?`2px solid ${C.magenta}`:'2px solid transparent',textDecoration:'none'}}>{p.label}</a>)}
+      </div>
+      <button onClick={()=>setDevice(d=>d==='desktop'?'mobile':'desktop')} style={{display:'flex',alignItems:'center',gap:6,background:C.g50,border:`1px solid ${C.g200}`,borderRadius:8,padding:'6px 12px',fontSize:12,color:C.g700,cursor:'pointer',fontFamily:'Roboto'}}>
+        {device==='desktop'?'📱 Móvil':'🖥 Desktop'}
+      </button>
+      <div style={{display:'flex',alignItems:'center',gap:10}}>
+        <div style={{width:32,height:32,borderRadius:'50%',background:C.blue,display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:13,fontWeight:600}}>MC</div>
+        <div style={{fontSize:13}}><div style={{fontWeight:500,color:C.g900}}>María Correal</div><div style={{fontSize:11,color:C.g500}}>Coordinadora de Crédito</div></div>
+      </div>
+    </div>
+  );
+}
+
+function Drawer({ row, onClose, onAction }) {
+  const [sarlaftModal, setSarlaftModal] = useState(false);
+  const [devolver, setDevolver] = useState(false);
+  return (
+    <>
+      <div onClick={onClose} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.25)',zIndex:200}} />
+      <div style={{position:'fixed',right:0,top:0,bottom:0,width:480,background:C.white,zIndex:201,animation:'slideIn 0.25s ease',display:'flex',flexDirection:'column',boxShadow:'-8px 0 40px rgba(0,0,0,0.10)'}}>
+        <div style={{padding:'18px 20px',borderBottom:`1px solid ${C.g200}`,display:'flex',justifyContent:'space-between',alignItems:'center',flexShrink:0}}>
+          <div>
+            <div style={{fontSize:16,fontWeight:700,color:C.g900}}>{row.name}</div>
+            <div style={{fontSize:12,color:C.g500}}>{row.id} · {row.monto}</div>
+          </div>
+          <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',fontSize:20,color:C.g500,lineHeight:1}}>✕</button>
+        </div>
+        <div style={{flex:1,overflowY:'auto',padding:20,display:'flex',flexDirection:'column',gap:16}}>
+          {row.sarlaft&&<div style={{background:'#fef2f2',border:'1px solid #fca5a5',borderRadius:10,padding:'12px 14px',display:'flex',gap:10}}>
+            <span style={{fontSize:16}}>🚨</span>
+            <div><div style={{fontSize:13,fontWeight:600,color:'#dc2626'}}>Alerta SARLAFT activa</div><div style={{fontSize:12,color:'#991b1b',marginTop:2}}>Este caso tiene señal de riesgo activa. La aprobación requiere confirmación adicional.</div></div>
+          </div>}
+          {row.override&&<div style={{background:'#fffbeb',border:'1px solid #fcd34d',borderRadius:10,padding:'12px 14px',fontSize:13,color:'#92400e'}}>
+            ⚠️ <strong>Override del analista:</strong> {row.analista}
+          </div>}
+          <div style={{borderRadius:10,border:`1px solid ${C.g200}`,overflow:'hidden'}}>
+            <div style={{background:C.g50,padding:'10px 14px',fontSize:12,fontWeight:600,color:C.g700,textTransform:'uppercase',letterSpacing:'0.6px'}}>Recomendación del motor</div>
+            <div style={{padding:'12px 14px',display:'flex',alignItems:'center',gap:10}}>
+              <div style={{width:10,height:10,borderRadius:'50%',background:motorColors[row.motor]}} />
+              <span style={{fontSize:14,fontWeight:500,color:C.g900}}>{motorLabels[row.motor]}</span>
+            </div>
+          </div>
+          <div style={{borderRadius:10,border:`1px solid ${C.g200}`,overflow:'hidden'}}>
+            <div style={{background:C.g50,padding:'10px 14px',fontSize:12,fontWeight:600,color:C.g700,textTransform:'uppercase',letterSpacing:'0.6px'}}>Validación del analista</div>
+            <div style={{padding:'12px 14px',fontSize:13,color:C.g700,lineHeight:1.6}}>{row.analista}</div>
+          </div>
+          <div style={{borderRadius:10,border:`1px solid ${C.g200}`,overflow:'hidden'}}>
+            <div style={{background:C.g50,padding:'10px 14px',fontSize:12,fontWeight:600,color:C.g700,textTransform:'uppercase',letterSpacing:'0.6px'}}>Datos del cliente</div>
+            <div style={{padding:'12px 14px'}}>
+              {[['DTI estimado','28 %'],['Comportamiento de pago','Sin mora — 36 meses'],['Tipo de operación',row.id.endsWith('891')?'Pre-aprobado':'Nuevo']].map(([l,v])=>(
+                <div key={l} style={{display:'flex',justifyContent:'space-between',padding:'5px 0',borderBottom:`1px solid ${C.g200}`,fontSize:13}}>
+                  <span style={{color:C.g500}}>{l}</span><span style={{color:C.g900,fontWeight:500}}>{v}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          {devolver&&<textarea placeholder="Nota para el analista (obligatorio)" style={{width:'100%',borderRadius:8,border:`1px solid ${C.g200}`,padding:10,fontSize:13,fontFamily:'Roboto',resize:'none',height:72,outline:'none'}} />}
+        </div>
+        <div style={{padding:'14px 20px',borderTop:`1px solid ${C.g200}`,display:'flex',flexDirection:'column',gap:10,flexShrink:0}}>
+          <div style={{display:'flex',gap:10}}>
+            <button onClick={()=>row.sarlaft?setSarlaftModal(true):onAction('aprobar')} style={{flex:1,padding:12,borderRadius:9,background:C.magenta,color:'#fff',fontSize:14,fontWeight:600,border:'none',cursor:'pointer',fontFamily:'Roboto',boxShadow:`0 3px 10px rgba(238,37,42,0.25)`}}>Aprobar</button>
+            <button onClick={()=>onAction('rechazar')} style={{flex:1,padding:12,borderRadius:9,background:C.white,color:'#ef4444',fontSize:14,fontWeight:500,border:'1px solid #ef4444',cursor:'pointer',fontFamily:'Roboto'}}>Rechazar</button>
+          </div>
+          <button onClick={()=>setDevolver(d=>!d)} style={{width:'100%',padding:10,borderRadius:9,background:C.g50,color:C.g700,fontSize:13,border:`1px solid ${C.g200}`,cursor:'pointer',fontFamily:'Roboto'}}>
+            Devolver al analista
+          </button>
+        </div>
+      </div>
+      {sarlaftModal&&(
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',zIndex:300,display:'flex',alignItems:'center',justifyContent:'center'}}>
+          <div style={{background:C.white,borderRadius:16,padding:28,maxWidth:400,width:'90%',boxShadow:'0 20px 60px rgba(0,0,0,0.2)'}}>
+            <div style={{fontSize:24,marginBottom:12}}>⚠️</div>
+            <h3 style={{fontSize:16,fontWeight:700,color:C.g900,marginBottom:8}}>Confirmación SARLAFT</h3>
+            <p style={{fontSize:13,color:C.g700,lineHeight:1.6,marginBottom:20}}>Este caso tiene señal SARLAFT activa. La aprobación queda registrada con tu usuario y fecha. ¿Confirmas?</p>
+            <div style={{display:'flex',flexDirection:'column',gap:10}}>
+              <button onClick={()=>{setSarlaftModal(false);onAction('aprobar');}} style={{padding:12,borderRadius:9,background:C.magenta,color:'#fff',fontSize:14,fontWeight:600,border:'none',cursor:'pointer',fontFamily:'Roboto'}}>Sí, apruebo bajo mi responsabilidad</button>
+              <button onClick={()=>setSarlaftModal(false)} style={{padding:12,borderRadius:9,background:C.g50,color:C.g700,fontSize:14,border:`1px solid ${C.g200}`,cursor:'pointer',fontFamily:'Roboto'}}>Cancelar</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function DesktopLayout() {
+  const [selected, setSelected] = useState(null);
+  const [filter, setFilter] = useState('todas');
+  const [decisions, setDecisions] = useState({});
+  function handleAction(action) { if(selected){ setDecisions(d=>({...d,[selected.id]:action})); setSelected(null); } }
+  const filtered = ROWS.filter(r=> filter==='todas'||filter==='sarlaft'&&r.sarlaft||filter==='override'&&r.override);
+
+  return (
+    <div style={{marginTop:52,padding:'24px 32px',minHeight:'calc(100vh - 52px)',overflowY:'auto'}}>
+      {/* Metrics */}
+      <div style={{display:'flex',gap:16,marginBottom:24}}>
+        {[{label:'Pendientes de decisión',val:ROWS.length-Object.keys(decisions).length,accent:C.g900},{label:'Monto total en cola',val:'$393,7M',accent:C.blue},{label:'Alertas SARLAFT',val:ROWS.filter(r=>r.sarlaft).length,accent:ROWS.filter(r=>r.sarlaft).length>0?'#ef4444':C.g900}].map(m=>(
+          <div key={m.label} style={{flex:1,background:C.white,borderRadius:14,padding:'18px 20px',boxShadow:`0 2px 8px rgba(0,0,0,0.05)`,border:`1px solid ${C.g200}`}}>
+            <div style={{fontSize:12,color:C.g500,marginBottom:6}}>{m.label}</div>
+            <div style={{fontSize:28,fontWeight:700,color:m.accent}}>{m.val}</div>
+          </div>
+        ))}
+      </div>
+      {/* Filters */}
+      <div style={{display:'flex',gap:8,marginBottom:16,alignItems:'center'}}>
+        <span style={{fontSize:13,color:C.g700,fontWeight:500,marginRight:4}}>Filtrar:</span>
+        {[['todas','Todas'],['sarlaft','Con alerta SARLAFT'],['override','Override del analista']].map(([v,l])=>(
+          <button key={v} onClick={()=>setFilter(v)} style={{padding:'6px 14px',borderRadius:20,fontSize:13,border:`1px solid ${filter===v?C.magenta:C.g200}`,background:filter===v?C.magentaL:C.white,color:filter===v?C.magenta:C.g700,cursor:'pointer',fontFamily:'Roboto',fontWeight:filter===v?600:400}}>
+            {l}
+          </button>
+        ))}
+      </div>
+      {/* Table */}
+      <div style={{background:C.white,borderRadius:14,overflow:'hidden',boxShadow:`0 2px 8px rgba(0,0,0,0.05)`,border:`1px solid ${C.g200}`}}>
+        <div style={{display:'grid',gridTemplateColumns:'40px 1fr 130px 120px 1fr 110px 120px',padding:'10px 16px',borderBottom:`1px solid ${C.g200}`,background:C.g50}}>
+          {['','Cliente','Monto','Motor','Validación analista','En mi cola','Acción'].map((h,i)=>(
+            <div key={i} style={{fontSize:11,fontWeight:600,color:C.g500,textTransform:'uppercase',letterSpacing:'0.5px'}}>{h}</div>
+          ))}
+        </div>
+        {filtered.map(row=>{
+          const dec = decisions[row.id];
+          return (
+            <div key={row.id} style={{display:'grid',gridTemplateColumns:'40px 1fr 130px 120px 1fr 110px 120px',padding:'13px 16px',borderBottom:`1px solid ${C.g200}`,alignItems:'center',opacity:dec?0.5:1,transition:'opacity 0.2s'}}>
+              <div style={{width:12,height:12,borderRadius:'50%',background:priorityColors[row.priority]}} />
+              <div>
+                <div style={{fontSize:14,fontWeight:500,color:C.g900}}>{row.name}</div>
+                <div style={{fontSize:11,color:C.g500}}>{row.id}</div>
+                <div style={{display:'flex',gap:4,marginTop:3,flexWrap:'wrap'}}>
+                  {row.sarlaft&&<span style={{fontSize:10,fontWeight:600,background:'#fef2f2',color:'#ef4444',borderRadius:4,padding:'1px 5px'}}>SARLAFT</span>}
+                  {row.externa&&<span style={{fontSize:10,fontWeight:600,background:'#fff7ed',color:'#c2410c',borderRadius:4,padding:'1px 5px'}}>⏸ Consulta externa</span>}
+                </div>
+              </div>
+              <div style={{fontSize:14,fontWeight:500,color:C.g900}}>{row.monto}</div>
+              <div style={{display:'flex',alignItems:'center',gap:6}}>
+                <span style={{width:8,height:8,borderRadius:'50%',background:motorColors[row.motor],display:'inline-block'}} />
+                <span style={{fontSize:13,color:motorColors[row.motor],fontWeight:500}}>{motorLabels[row.motor]}</span>
+              </div>
+              <div style={{fontSize:12,color:row.override?'#92400e':C.g700,lineHeight:1.4}}>{row.analista}</div>
+              <div style={{fontSize:13,color:C.g500}}>{row.tiempo}</div>
+              <div>
+                {dec ? (
+                  <span style={{fontSize:13,fontWeight:600,color:dec==='aprobar'?'#22c55e':'#ef4444',textTransform:'capitalize'}}>{dec==='aprobar'?'✓ Aprobado':'✕ Rechazado'}</span>
+                ) : (
+                  <button onClick={()=>setSelected(row)} style={{padding:'7px 14px',borderRadius:7,background:C.magenta,color:'#fff',fontSize:13,fontWeight:600,border:'none',cursor:'pointer',fontFamily:'Roboto'}}>Decidir</button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {selected&&<Drawer row={selected} onClose={()=>setSelected(null)} onAction={handleAction} />}
+    </div>
+  );
+}
+
+function MobileLayout() {
+  const [selected, setSelected] = useState(null);
+  const [decisions, setDecisions] = useState({});
+  function handleAction(action) { if(selected){ setDecisions(d=>({...d,[selected.id]:action})); setSelected(null); } }
+  return (
+    <div style={{overflowY:'auto',height:'100%',background:C.g50}}>
+      <div style={{padding:'12px 16px 6px',background:C.white,borderBottom:`1px solid ${C.g200}`}}>
+        <div style={{fontSize:14,fontWeight:700,color:C.g900,marginBottom:10}}>Pendientes de decisión</div>
+        <div style={{display:'flex',gap:10,marginBottom:4}}>
+          {[{label:'Pendientes',val:ROWS.length-Object.keys(decisions).length},{label:'SARLAFT',val:1,red:true},{label:'Override',val:2}].map(m=>(
+            <div key={m.label} style={{flex:1,background:m.red?'#fef2f2':C.g50,borderRadius:8,padding:'8px 10px',textAlign:'center',border:`1px solid ${m.red?'#fca5a5':C.g200}`}}>
+              <div style={{fontSize:16,fontWeight:700,color:m.red?'#dc2626':C.g900}}>{m.val}</div>
+              <div style={{fontSize:11,color:m.red?'#dc2626':C.g500}}>{m.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      {ROWS.map(row=>{
+        const dec = decisions[row.id];
+        return (
+          <div key={row.id} style={{background:C.white,borderBottom:`1px solid ${C.g200}`,padding:'14px 16px',opacity:dec?0.5:1}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:6}}>
+              <div>
+                <div style={{fontSize:14,fontWeight:600,color:C.g900}}>{row.name}</div>
+                <div style={{fontSize:12,color:C.g500}}>{row.id}</div>
+              </div>
+              {dec ? <span style={{fontSize:13,fontWeight:600,color:dec==='aprobar'?'#22c55e':'#ef4444'}}>{dec==='aprobar'?'✓ Aprobado':'✕ Rechazado'}</span>
+                   : <button onClick={()=>setSelected(row)} style={{padding:'7px 14px',borderRadius:7,background:C.magenta,color:'#fff',fontSize:12,fontWeight:600,border:'none',cursor:'pointer',fontFamily:'Roboto'}}>Decidir</button>}
+            </div>
+            <div style={{display:'flex',gap:16,fontSize:13}}>
+              <span style={{color:C.g700}}>{row.monto}</span>
+              <span style={{display:'flex',alignItems:'center',gap:4}}><span style={{width:7,height:7,borderRadius:'50%',background:motorColors[row.motor],display:'inline-block'}} />{motorLabels[row.motor]}</span>
+              {row.sarlaft&&<span style={{color:'#ef4444',fontWeight:600,fontSize:11}}>SARLAFT</span>}
+            </div>
+          </div>
+        );
+      })}
+      {selected&&<Drawer row={selected} onClose={()=>setSelected(null)} onAction={handleAction} />}
+    </div>
+  );
+}
+
+function IntegrationBanner() {
+  const [show,setShow]=React.useState(true);
+  if(!show) return null;
+  return (
+    <div style={{position:'fixed',top:52,left:0,right:0,zIndex:90,background:'#FFAE00',color:'#1a1300',padding:'8px 16px',display:'flex',alignItems:'center',gap:10,fontSize:13,fontWeight:500,boxShadow:'0 2px 8px rgba(255,174,0,0.25)'}}>
+      <span style={{fontSize:16}}>⚠</span>
+      <span>RUNT está intermitente desde 09:14. 1 caso afectado con badge naranja.</span>
+      <a href="Finscope P10 - Espera.html" style={{marginLeft:'auto',padding:'5px 12px',borderRadius:6,background:'#1a1300',color:'#FFAE00',fontWeight:600,fontSize:12,textDecoration:'none'}}>Ver tablero de integraciones →</a>
+      <button onClick={()=>setShow(false)} style={{background:'none',border:'none',cursor:'pointer',fontSize:16,color:'#1a1300',padding:'0 4px'}}>✕</button>
+    </div>
+  );
+}
+
+function App() {
+  const [device, setDevice] = useState('desktop');
+  return (
+    <>
+      <NavBar device={device} setDevice={setDevice} />
+      <IntegrationBanner />
+      {device==='desktop'
+        ? <DesktopLayout />
+        : <div style={{display:'flex',justifyContent:'center',alignItems:'flex-start',background:'#EDECEA',padding:20,minHeight:'calc(100vh - 52px)',marginTop:52,overflowY:'auto'}}>
+            <div style={{width:390,height:750,background:C.white,borderRadius:24,overflow:'hidden',boxShadow:'0 20px 60px rgba(0,0,0,0.15)',display:'flex',flexDirection:'column'}}>
+              <MobileLayout />
+            </div>
+          </div>}
+    </>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

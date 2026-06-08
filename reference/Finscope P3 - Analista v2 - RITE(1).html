@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Finscope v2 — P3 Analista (Correcciones RITE)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Roboto',sans-serif;background:#F5F4F2;overflow:hidden;}
+    ::-webkit-scrollbar{width:5px;} ::-webkit-scrollbar-track{background:transparent;} ::-webkit-scrollbar-thumb{background:#DEDBD7;border-radius:3px;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+    @keyframes slideIn{from{transform:translateX(100%);opacity:0;}to{transform:translateX(0);opacity:1;}}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+    @keyframes pop{from{opacity:0;transform:scale(0.92);}to{opacity:1;transform:scale(1);}}
+    .rite-tag{background:#fef3c7;color:#92400e;border:1px solid #fcd34d;border-radius:4px;padding:2px 6px;font-size:9px;font-weight:600;letter-spacing:0.3px;text-transform:uppercase;display:inline-block;margin-left:8px}
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useRef, useEffect } = React;
+const C = { magenta:'#ee252a', magentaL:'rgba(238,37,42,0.08)', success:'#16a34a', successL:'#dcfce7', warn:'#f59e0b', warnL:'#fffbeb', danger:'#dc2626', dangerL:'#fef2f2', blue:'#3f5cdd', blueL:'#eff4ff', g900:'#212121', g700:'#616161', g500:'#9E9E9E', g200:'#EEEEEE', g50:'#FAFAFA', white:'#FFFFFF' };
+
+/* U6 FIX: Sistema de colores estricto - verde=avanzar, rojo=alertas/rechazo, azul=neutral */
+const semaforo = {
+  aprobar:  { color:C.success, bg:C.successL, label:'Recomendación: Aprobar',  short:'Aprobar' },
+  revisar:  { color:C.warn,    bg:C.warnL,    label:'Revisión manual sugerida', short:'Revisar' },
+  rechazar: { color:C.danger,  bg:C.dangerL,  label:'Recomendación: Rechazar',  short:'Rechazar' },
+  atipico:  { color:C.g500,    bg:C.g50,      label:'Sin recomendación — caso atípico', short:'Atípico' },
+};
+
+const CASES = [
+  { id:'SOL-2024-0891', name:'Carlos Mejía',   tipo:'Pre-aprobado', monto:'$42.000.000', plazo:'48 meses', motor:'aprobar', tiempo:'Hace 8 min',  sarlaft:false },
+  { id:'SOL-2024-0892', name:'Ana Rodríguez',  tipo:'Nuevo',        monto:'$28.500.000', plazo:'36 meses', motor:'revisar', tiempo:'Hace 22 min', sarlaft:false },
+  { id:'SOL-2024-0893', name:'Tomás Peña',     tipo:'Renovación',   monto:'$55.000.000', plazo:'60 meses', motor:'aprobar', tiempo:'Hace 35 min', sarlaft:false },
+  { id:'SOL-2024-0894', name:'Diego Castro',   tipo:'Nuevo',        monto:'$18.200.000', plazo:'24 meses', motor:'rechazar',tiempo:'Hace 1 h',    sarlaft:true  },
+  { id:'SOL-2024-0895', name:'Valeria Ortiz',  tipo:'Pre-aprobado', monto:'$62.000.000', plazo:'60 meses', motor:'atipico', tiempo:'Hace 2 h',    sarlaft:false },
+];
+
+/* U6 FIX: Factores con explicación clara del peso */
+const FACTORS = [
+  { label:'Historial de pagos', value:'Sin mora — últimos 36 meses', pct:45, explain:'45% del puntaje total' },
+  { label:'DTI calculado', value:'28 % (umbral máx. 40 %)', pct:22, explain:'22% del puntaje total' },
+  { label:'Antigüedad como cliente', value:'7 años', pct:15, explain:'15% del puntaje total' },
+  { label:'Tipo de operación', value:'Pre-aprobado con historial', pct:10, explain:'10% del puntaje total' },
+  { label:'Comportamiento de ahorro', value:'Depósitos regulares', pct:8, explain:'8% del puntaje total' },
+];
+
+function Logo() {
+  return (
+    <div style={{display:'flex',alignItems:'center',gap:8}}>
+      <div style={{background:'#fff',borderRadius:7,padding:3,boxShadow:'0 1px 4px rgba(0,0,0,0.10)',display:'flex'}}>
+        <img src="uploads/imagen.png" width={26} height={26} alt="Finscope" style={{display:'block'}} />
+      </div>
+      <span style={{fontWeight:700,fontSize:17,color:C.g900,letterSpacing:'-0.4px'}}>Finscope</span>
+    </div>
+  );
+}
+
+function NavBar({ device, setDevice }) {
+  const pages = [
+    { label:'P1+P2 Cliente v2', href:'Finscope Prototype v2 - RITE.html' },
+    { label:'P3 Analista v2', href:'Finscope P3 - Analista v2 - RITE.html', active:true },
+    { label:'P4 Coordinador v2', href:'Finscope P4 - Coordinador v2 - RITE.html' },
+    { label:'P5 Ejecutivo', href:'Finscope P5 - Ejecutivo.html' },
+    { label:'P6 Dashboard', href:'Finscope P6 - Ejecutivo Dashboard.html' },
+    { label:'P7 Operativo', href:'Finscope P7 - Operativo.html' },
+    { label:'P8 Desembolso', href:'Finscope P8 - Desembolso.html' },
+    { label:'P9 Excepción', href:'Finscope P9 - Excepcion.html' },
+    { label:'P10 Espera', href:'Finscope P10 - Espera.html' },
+    { label:'P11 QR', href:'Finscope P11 - QR.html' },
+    { label:'📋 RITE', href:'RITE - Resumen.html' },
+  ];
+  return (
+    <div style={{height:52,background:C.white,borderBottom:`1px solid ${C.g200}`,display:'flex',alignItems:'center',padding:'0 20px',gap:20,position:'fixed',top:0,left:0,right:0,zIndex:100}}>
+      <Logo />
+      <div style={{display:'flex',gap:2,height:'100%',alignItems:'center',flex:1,overflowX:'auto',whiteSpace:'nowrap'}}>
+        {pages.map(p=>(
+          <a key={p.label} href={p.href} style={{padding:'0 12px',height:'100%',display:'flex',alignItems:'center',fontSize:13,fontWeight:p.active?600:400,color:p.active?C.magenta:C.g700,borderBottom:p.active?`2px solid ${C.magenta}`:'2px solid transparent',textDecoration:'none'}}>
+            {p.label}
+          </a>
+        ))}
+      </div>
+      <button onClick={()=>setDevice(d=>d==='desktop'?'mobile':'desktop')} style={{display:'flex',alignItems:'center',gap:6,background:C.g50,border:`1px solid ${C.g200}`,borderRadius:8,padding:'6px 12px',fontSize:12,color:C.g700,cursor:'pointer',fontFamily:'Roboto'}}>
+        {device==='desktop'?'📱 Móvil':'🖥 Desktop'}
+      </button>
+      <div style={{display:'flex',alignItems:'center',gap:10}}>
+        {/* U6 FIX: avatar inicial coherente — tono basado en rol, no aleatorio */}
+        <div style={{width:32,height:32,borderRadius:'50%',background:C.g900,display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:13,fontWeight:600}}>PG</div>
+        <div style={{fontSize:13}}>
+          <div style={{fontWeight:500,color:C.g900}}>Pedro Gómez</div>
+          <div style={{fontSize:11,color:C.g500}}>Analista de Crédito</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* U6 FIX: Indicador (NO botón) — forma diferente para evitar confusión chulo verde */
+function MotorBadge({ type }) {
+  const s = semaforo[type];
+  return (
+    <span style={{display:'inline-flex',alignItems:'center',gap:6,fontSize:12,color:s.color,fontWeight:600,background:s.bg,padding:'3px 8px',borderRadius:12,border:`1px solid ${s.color}30`}}>
+      <span style={{width:6,height:6,borderRadius:'50%',background:s.color,display:'inline-block'}} />
+      {s.short}
+    </span>
+  );
+}
+
+function CaseItem({ c, selected, onClick }) {
+  return (
+    <div onClick={onClick} style={{padding:'12px 16px',background:selected?C.magentaL:C.white,borderLeft:selected?`3px solid ${C.magenta}`:'3px solid transparent',cursor:'pointer',borderBottom:`1px solid ${C.g200}`,transition:'background 0.15s'}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:3}}>
+        <span style={{fontSize:14,fontWeight:600,color:C.g900}}>{c.name}</span>
+        {c.sarlaft&&<span style={{fontSize:10,fontWeight:600,background:C.dangerL,color:C.danger,borderRadius:4,padding:'2px 6px'}}>SARLAFT</span>}
+      </div>
+      <div style={{fontSize:12,color:C.g500,marginBottom:6}}>{c.id} · {c.tipo}</div>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <MotorBadge type={c.motor} />
+        <span style={{fontSize:11,color:C.g500}}>{c.tiempo}</span>
+      </div>
+    </div>
+  );
+}
+
+/* U6 FIX: Motor card — chulo verde claramente icono indicador (no botón) */
+function MotorCard({ c }) {
+  const [open, setOpen] = useState(false);
+  const s = semaforo[c.motor];
+  return (
+    <div style={{borderRadius:12,overflow:'hidden',border:`1px solid ${s.color}30`}}>
+      <div style={{background:s.bg,padding:'14px 16px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+        <div>
+          {/* U6: aclarar que es recomendación, no acción */}
+          <div style={{fontSize:11,color:C.g500,fontWeight:500,letterSpacing:'0.5px',textTransform:'uppercase',marginBottom:3}}>Sugerencia automática · solo informativa</div>
+          <div style={{fontSize:14,fontWeight:600,color:s.color}}>{s.label}</div>
+          <div style={{fontSize:12,color:C.g700,marginTop:2}}>Nivel de confianza: <strong>Alta</strong></div>
+        </div>
+        {/* U6 FIX: icono indicador con borde de "no clickeable" — diferente de botones (que tienen sombra y son rectangulares) */}
+        <div title="Indicador visual — no es un botón" style={{width:48,height:48,borderRadius:'50%',background:C.white,border:`2.5px solid ${s.color}`,display:'flex',alignItems:'center',justifyContent:'center',cursor:'default'}}>
+          <svg width="22" height="22" viewBox="0 0 20 20" fill="none">
+            {c.motor==='aprobar'&&<path d="M4 10l5 5 7-8" stroke={s.color} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>}
+            {c.motor==='rechazar'&&<path d="M5 5l10 10M15 5L5 15" stroke={s.color} strokeWidth="2.4" strokeLinecap="round"/>}
+            {c.motor==='revisar'&&<path d="M10 5v6M10 14v1" stroke={s.color} strokeWidth="2.4" strokeLinecap="round"/>}
+            {c.motor==='atipico'&&<path d="M10 5v6M10 14v1" stroke={s.color} strokeWidth="2.4" strokeLinecap="round"/>}
+          </svg>
+        </div>
+      </div>
+      <div style={{background:C.white,padding:'0 16px'}}>
+        <button onClick={()=>setOpen(o=>!o)} style={{width:'100%',background:'none',border:'none',borderBottom:`1px solid ${C.g200}`,padding:'12px 0',display:'flex',justifyContent:'space-between',cursor:'pointer',fontSize:13,color:C.blue,fontFamily:'Roboto',fontWeight:500}}>
+          ¿Cómo se calcula esta sugerencia?
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{transform:open?'rotate(180deg)':'none',transition:'0.2s'}}>
+            <path d="M2 5l5 5 5-5" stroke={C.blue} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+        {open&&<div style={{padding:'12px 0 16px'}}>
+          {/* U4, U6 FIX: explicación clara del % de peso */}
+          <p style={{fontSize:12,color:C.g700,marginBottom:14,lineHeight:1.6}}>El motor pondera 5 factores. Cada porcentaje indica <strong>cuánto pesa ese factor</strong> en la recomendación final. La suma es 100%.</p>
+          {FACTORS.map(f=>(
+            <div key={f.label} style={{marginBottom:12}}>
+              <div style={{display:'flex',justifyContent:'space-between',marginBottom:5}}>
+                <span style={{fontSize:13,color:C.g900}}>{f.label}</span>
+                <span style={{fontSize:13,color:C.g500}}>{f.value}</span>
+              </div>
+              <div style={{height:6,background:C.g200,borderRadius:3}}>
+                <div style={{height:'100%',width:`${f.pct*2}%`,background:s.color,borderRadius:3}} />
+              </div>
+              <div style={{fontSize:11,color:C.g500,marginTop:3}}>{f.explain}</div>
+            </div>
+          ))}
+          <p style={{fontSize:11,color:C.g500,marginTop:8,lineHeight:1.5}}>El analista mantiene la responsabilidad final de la decisión.</p>
+        </div>}
+      </div>
+    </div>
+  );
+}
+
+function ClientTabs() {
+  const [tab, setTab] = useState(0);
+  const tabs = ['Info personal','Comportamiento financiero','Vehículo','Documentos','RUNT'];
+  return (
+    <div style={{borderRadius:12,background:C.white,overflow:'hidden',border:`1px solid ${C.g200}`}}>
+      <div style={{display:'flex',borderBottom:`1px solid ${C.g200}`,overflowX:'auto'}}>
+        {tabs.map((t,i)=>(
+          <button key={t} onClick={()=>setTab(i)} style={{flex:'1 0 auto',padding:'10px 14px',background:'none',border:'none',borderBottom:tab===i?`2px solid ${C.magenta}`:'2px solid transparent',fontSize:12,fontWeight:tab===i?600:400,color:tab===i?C.magenta:C.g700,cursor:'pointer',fontFamily:'Roboto',whiteSpace:'nowrap'}}>
+            {t}
+          </button>
+        ))}
+      </div>
+      <div style={{padding:16}}>
+        {tab===0&&<>
+          {[['Nombre completo','Carlos Andrés Mejía Vargas'],['Cédula','1.032.456.789'],['Correo','c.mejia@gmail.com'],['Celular','316 754 3210'],['Ciudad','Bogotá D.C.']].map(([l,v])=>(
+            <div key={l} style={{display:'flex',justifyContent:'space-between',padding:'7px 0',borderBottom:`1px solid ${C.g200}`,fontSize:13}}>
+              <span style={{color:C.g500}}>{l}</span><span style={{color:C.g900,fontWeight:500}}>{v}</span>
+            </div>
+          ))}
+        </>}
+        {tab===1&&<>
+          {/* U5 FIX: DTI explicado */}
+          {[['Crédito activo','$18.500.000 — al día'],['Historial de pagos','Sin mora (36 meses)'],['Cuota actual','$512.000/mes'],['DTI estimado','28 %'],['Antigüedad','7 años']].map(([l,v])=>(
+            <div key={l} style={{display:'flex',justifyContent:'space-between',padding:'7px 0',borderBottom:`1px solid ${C.g200}`,fontSize:13}}>
+              <span style={{color:C.g500,display:'flex',alignItems:'center',gap:6}}>{l}{l==='DTI estimado'&&<span title="Debt-to-Income: porcentaje de tu ingreso mensual destinado a pagar deudas. Umbral máximo Finandina: 40%." style={{cursor:'help',background:C.g200,color:C.g700,borderRadius:'50%',width:14,height:14,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700}}>?</span>}</span>
+              <span style={{color:C.g900,fontWeight:500}}>{v}</span>
+            </div>
+          ))}
+          {/* U5 FIX: leyenda explicando DTI */}
+          <p style={{fontSize:11,color:C.g500,marginTop:10,lineHeight:1.5,fontStyle:'italic'}}>DTI (Debt-to-Income) = % del ingreso mensual destinado a pagar deudas. Umbral Finandina: 40% máx.</p>
+        </>}
+        {tab===2&&<>
+          {/* U5 FIX: detalle del vehículo accesible para revisión manual */}
+          {[['Marca','Mazda'],['Modelo','CX-30 2024'],['Color','Blanco'],['Valor comercial','$115.000.000'],['Concesionario','Mazda Norte (Bogotá)']].map(([l,v])=>(
+            <div key={l} style={{display:'flex',justifyContent:'space-between',padding:'7px 0',borderBottom:`1px solid ${C.g200}`,fontSize:13}}>
+              <span style={{color:C.g500}}>{l}</span><span style={{color:C.g900,fontWeight:500}}>{v}</span>
+            </div>
+          ))}
+          <p style={{fontSize:11,color:C.g500,marginTop:10}}>Datos seleccionados del catálogo Finandina por el cliente.</p>
+        </>}
+        {tab===3&&<>
+          {[['Cédula frontal','✓ Cargada'],['Cédula reverso','✓ Cargada'],['Selección de vehículo','✓ Confirmada']].map(([l,v])=>(
+            <div key={l} style={{display:'flex',justifyContent:'space-between',padding:'7px 0',borderBottom:`1px solid ${C.g200}`,fontSize:13}}>
+              <span style={{color:C.g500}}>{l}</span>
+              <span style={{color:C.success,fontWeight:500}}>{v}</span>
+            </div>
+          ))}
+          <p style={{fontSize:11,color:C.blue,marginTop:10,cursor:'pointer',textDecoration:'underline'}}>Ver documentos cargados →</p>
+        </>}
+        {tab===4&&<>
+          {/* U5 FIX: detalle de RUNT accesible para revisión manual */}
+          <div style={{background:C.successL,borderRadius:8,padding:10,marginBottom:12,fontSize:12,color:C.success,fontWeight:500,display:'flex',alignItems:'center',gap:8}}>
+            <span style={{width:8,height:8,borderRadius:'50%',background:C.success,display:'inline-block'}} />
+            RUNT consultado el 28/04/2026 — Sin novedades
+          </div>
+          {[['Estado','ACTIVO'],['Multas pendientes','Ninguna'],['Comparendos','Ninguno'],['SOAT','Vigente'],['Tecnomecánica','Vigente']].map(([l,v])=>(
+            <div key={l} style={{display:'flex',justifyContent:'space-between',padding:'7px 0',borderBottom:`1px solid ${C.g200}`,fontSize:13}}>
+              <span style={{color:C.g500}}>{l}</span><span style={{color:C.g900,fontWeight:500}}>{v}</span>
+            </div>
+          ))}
+        </>}
+      </div>
+    </div>
+  );
+}
+
+/* U2 FIX: Datacrédito ya NO se cuelga; reintento manual disponible. */
+function Integrations() {
+  const [items, setItems] = useState([
+    { label:'RUNT',         status:'ok',      msg:'Consultado OK · 28/04/2026 09:14' },
+    { label:'DataCrédito',  status:'ok',      msg:'Consultado OK · 28/04/2026 09:14' }, // U2: ya no se cuelga
+    { label:'Automas',      status:'ok',      msg:'Consultado OK · 28/04/2026 09:14' },
+    { label:'Mareigua',     status:'warn',    msg:'No disponible — reintento en 5 min' },
+    { label:'SOI',          status:'ok',      msg:'Consultado OK · 28/04/2026 09:14' },
+  ]);
+  function reintentar(label){
+    setItems(prev=>prev.map(it=>it.label===label?{...it,status:'loading',msg:'Consultando…'}:it));
+    setTimeout(()=>{
+      setItems(prev=>prev.map(it=>it.label===label?{...it,status:'ok',msg:'Consultado OK · '+new Date().toLocaleString('es-CO')}:it));
+    },1400);
+  }
+  const icon = s => s==='ok'?C.success:s==='loading'?C.warn:s==='warn'?'#f97316':C.danger;
+  return (
+    <div style={{borderRadius:12,background:C.white,border:`1px solid ${C.g200}`,overflow:'hidden'}}>
+      {items.map((item,i)=>(
+        <div key={item.label} style={{display:'flex',alignItems:'center',gap:12,padding:'11px 16px',borderBottom:i<items.length-1?`1px solid ${C.g200}`:'none'}}>
+          <div style={{width:8,height:8,borderRadius:'50%',background:icon(item.status),flexShrink:0}} />
+          <span style={{fontSize:13,fontWeight:500,color:C.g900,width:110}}>{item.label}</span>
+          {item.status==='loading'&&<div style={{width:14,height:14,borderRadius:'50%',border:`2px solid ${C.g200}`,borderTopColor:C.warn,animation:'spin 0.7s linear infinite'}} />}
+          <span style={{fontSize:12,color:C.g500,flex:1}}>{item.msg}</span>
+          {/* U5 FIX: ver detalle disponible para todos */}
+          {item.status==='ok'&&<button style={{fontSize:11,color:C.blue,background:'none',border:'none',cursor:'pointer',fontFamily:'Roboto',padding:0,textDecoration:'underline'}}>Ver detalle</button>}
+          {item.status==='warn'&&<button onClick={()=>reintentar(item.label)} style={{fontSize:11,color:C.blue,background:'none',border:`1px solid ${C.blue}`,borderRadius:5,padding:'3px 8px',cursor:'pointer',fontFamily:'Roboto'}}>Reintentar</button>}
+        </div>
+      ))}
+      <div style={{padding:'10px 16px',background:C.g50,fontSize:11,color:C.g500}}>Si alguna fuente está caída, puedes decidir sin ella dejando constancia del motivo.</div>
+    </div>
+  );
+}
+
+/* U6 FIX: Acción del analista — diferenciación clara entre Aceptar/Anular/Rechazar.
+   "Validar y enviar" YA NO es rojo (rojo se reserva para alertas/rechazos).
+   Anular y Rechazar tienen explicaciones diferentes. */
+function ResultBlock({ decision, onRevert, onNext }) {
+  const cfg = {
+    enviado:    { bg:'#ecfdf5', border:'#a7f3d0', accent:C.success, icon:'✓', title:'Enviado al coordinador', body:'El caso pasó a la cola del coordinador con tu validación. Quedó registrado en auditoría.' },
+    rechazado:  { bg:'#fef2f2', border:'#fca5a5', accent:C.danger,  icon:'✕', title:'Caso rechazado', body:'El cliente recibirá la notificación. Puedes deshacer durante los próximos 30 segundos.' },
+    anulado:    { bg:'#fffbeb', border:'#fcd34d', accent:C.warn,    icon:'⇄', title:'Recomendación anulada', body:'Tu override quedó registrado con motivo y categoría conforme a SARLAFT. El caso pasa al coordinador con tu propuesta.' },
+    segunda:    { bg:'#eff6ff', border:'#bfdbfe', accent:C.blue,    icon:'⋯', title:'Esperando segunda opinión', body:'El caso fue enviado a otro analista senior. Te llegará una notificación cuando respondan. Tú mantienes la decisión final.' },
+  }[decision] || {};
+  return (
+    <div style={{borderRadius:12,background:cfg.bg,border:`1px solid ${cfg.border}`,padding:18}}>
+      <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:8}}>
+        <div style={{width:30,height:30,borderRadius:'50%',background:cfg.accent,color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:15,fontWeight:700}}>{cfg.icon}</div>
+        <div style={{fontSize:15,fontWeight:700,color:C.g900}}>{cfg.title}</div>
+      </div>
+      <p style={{fontSize:13,color:C.g700,lineHeight:1.6,marginBottom:14}}>{cfg.body}</p>
+      <div style={{display:'flex',gap:10}}>
+        <button onClick={onRevert} style={{flex:1,padding:11,borderRadius:9,background:'transparent',color:C.g700,fontSize:13,fontWeight:500,border:`1px solid ${C.g200}`,cursor:'pointer',fontFamily:'Roboto'}}>Revertir</button>
+        <button onClick={onNext} style={{flex:1,padding:11,borderRadius:9,background:cfg.accent,color:'#fff',fontSize:13,fontWeight:600,border:'none',cursor:'pointer',fontFamily:'Roboto'}}>Siguiente caso →</button>
+      </div>
+    </div>
+  );
+}
+
+function ActionZone({ onValidar, onRechazar, onAnular, onSegunda }) {
+  const [mode, setMode] = useState(null);
+  const [motivo, setMotivo] = useState('');
+  const [categoria, setCategoria] = useState('');
+  const [rechazoMotivo, setRechazoMotivo] = useState('');
+  const [confirm, setConfirm] = useState(null);
+  return (
+    <div style={{borderRadius:12,background:C.white,border:`1px solid ${C.g200}`,padding:16}}>
+      <p style={{fontSize:14,fontWeight:600,color:C.g900,marginBottom:6}}>Acción del analista <span className="rite-tag">RITE U6</span></p>
+      {/* U5, U6 FIX: explicación clara de cada acción */}
+      <p style={{fontSize:12,color:C.g500,marginBottom:14,lineHeight:1.5}}>
+        <strong>Aceptar</strong> = estoy de acuerdo con la recomendación del motor.
+        <strong style={{marginLeft:8}}>Anular</strong> = no estoy de acuerdo y propongo otra decisión.
+        <strong style={{marginLeft:8}}>Rechazar</strong> = el caso no debe avanzar a coordinador.
+      </p>
+      <div style={{display:'flex',gap:10,marginBottom:16,flexWrap:'wrap'}}>
+        {[['aceptar','Aceptar recomendación','Coincides con el motor'],['anular','Anular recomendación','No coincides'],['rechazar','Rechazar caso','Cierra el caso'],['segunda','Pedir segunda opinión','Otro analista revisa']].map(([m,label,sub])=>(
+          <button key={m} onClick={()=>setMode(mode===m?null:m)} style={{flex:'1 1 calc(50% - 5px)',minWidth:140,padding:'10px 8px',borderRadius:9,fontSize:12,fontWeight:500,cursor:'pointer',fontFamily:'Roboto',border:mode===m?`2px solid ${C.magenta}`:`1px solid ${C.g200}`,background:mode===m?C.magentaL:C.white,color:mode===m?C.magenta:C.g700,transition:'all 0.15s',textAlign:'left'}}>
+            <div style={{fontWeight:600}}>{label}</div>
+            <div style={{fontSize:11,color:mode===m?C.magenta:C.g500,marginTop:2}}>{sub}</div>
+          </button>
+        ))}
+      </div>
+      {mode==='aceptar'&&<div>
+        <textarea placeholder="Comentarios para el coordinador (opcional)" style={{width:'100%',borderRadius:8,border:`1px solid ${C.g200}`,padding:10,fontSize:13,fontFamily:'Roboto',resize:'none',height:72,outline:'none'}} />
+        {/* U6 FIX: botón verde (avanzar/éxito) NO rojo */}
+        <button onClick={()=>setConfirm('aceptar')} style={{marginTop:10,width:'100%',padding:12,borderRadius:9,background:C.success,color:'#fff',fontSize:14,fontWeight:600,border:'none',cursor:'pointer',fontFamily:'Roboto',boxShadow:`0 4px 12px ${C.success}40`}}>
+          ✓ Validar y enviar a coordinador
+        </button>
+      </div>}
+      {mode==='anular'&&<div>
+        <textarea value={motivo} onChange={e=>setMotivo(e.target.value)} placeholder="Motivo de la anulación (mínimo 30 caracteres)" style={{width:'100%',borderRadius:8,border:`1px solid ${motivo.length>0&&motivo.length<30?C.danger:C.g200}`,padding:10,fontSize:13,fontFamily:'Roboto',resize:'none',height:72,outline:'none'}} />
+        {motivo.length>0&&motivo.length<30&&<p style={{fontSize:11,color:C.danger,marginTop:4}}>{30-motivo.length} caracteres más requeridos</p>}
+        {/* U6 FIX: select más corto y enfocado */}
+        <select value={categoria} onChange={e=>setCategoria(e.target.value)} style={{width:'100%',marginTop:10,padding:'9px 10px',borderRadius:8,border:`1px solid ${C.g200}`,fontSize:13,fontFamily:'Roboto',color:categoria?C.g900:C.g500,background:C.white,outline:'none'}}>
+          <option value="">Categoría del motivo</option>
+          <option>Datos adicionales del cliente</option>
+          <option>Señal de riesgo no capturada por el motor</option>
+          <option>Excepción comercial aprobada</option>
+          <option>Otro (especificar arriba)</option>
+        </select>
+        <p style={{fontSize:11,color:C.g500,marginTop:8}}>Los overrides quedan registrados en auditoría conforme a SARLAFT.</p>
+        <button disabled={motivo.length<30||!categoria} onClick={()=>setConfirm('anular')} style={{marginTop:10,width:'100%',padding:12,borderRadius:9,background:motivo.length>=30&&categoria?C.warn:C.g200,color:motivo.length>=30&&categoria?'#fff':C.g500,fontSize:14,fontWeight:600,border:'none',cursor:motivo.length>=30&&categoria?'pointer':'not-allowed',fontFamily:'Roboto'}}>
+          Anular y proponer otra decisión
+        </button>
+      </div>}
+      {mode==='rechazar'&&<div>
+        <select value={rechazoMotivo} onChange={e=>setRechazoMotivo(e.target.value)} style={{width:'100%',padding:'9px 10px',borderRadius:8,border:`1px solid ${C.g200}`,fontSize:13,fontFamily:'Roboto',color:rechazoMotivo?C.g900:C.g700,outline:'none'}}>
+          <option value="">Seleccionar motivo de rechazo</option>
+          <option>Capacidad de pago insuficiente</option>
+          <option>Documentos incompletos</option>
+          <option>Perfil de riesgo elevado</option>
+          <option>Señal SARLAFT</option>
+          <option>Otro motivo</option>
+        </select>
+        <button disabled={!rechazoMotivo} onClick={()=>setConfirm('rechazar')} style={{marginTop:10,width:'100%',padding:12,borderRadius:9,background:rechazoMotivo?C.danger:C.g200,color:rechazoMotivo?'#fff':C.g500,fontSize:14,fontWeight:600,border:'none',cursor:rechazoMotivo?'pointer':'not-allowed',fontFamily:'Roboto'}}>
+          Rechazar caso
+        </button>
+      </div>}
+      {mode==='segunda'&&<div>
+        <p style={{fontSize:12,color:C.g700,lineHeight:1.6,marginBottom:10}}>Envía el caso a otro analista senior para que dé su lectura. <strong>No transfiere</strong> el caso al coordinador — tú mantienes la decisión final.</p>
+        <select style={{width:'100%',padding:'9px 10px',borderRadius:8,border:`1px solid ${C.g200}`,fontSize:13,fontFamily:'Roboto',color:C.g700,outline:'none',marginBottom:10}}>
+          <option>María Torres · Senior</option>
+          <option>Diana Cruz · Senior</option>
+          <option>Carlos Reyes · Senior</option>
+        </select>
+        <textarea placeholder="Pregunta o contexto (opcional)" style={{width:'100%',borderRadius:8,border:`1px solid ${C.g200}`,padding:10,fontSize:13,fontFamily:'Roboto',resize:'none',height:60,outline:'none'}} />
+        <button onClick={()=>setConfirm('segunda')} style={{marginTop:10,width:'100%',padding:12,borderRadius:9,background:C.blue,color:'#fff',fontSize:14,fontWeight:600,border:'none',cursor:'pointer',fontFamily:'Roboto'}}>
+          Enviar a otro analista
+        </button>
+      </div>}
+      {/* U6 FIX: doble confirmación antes de cualquier acción crítica */}
+      {confirm&&<ConfirmModal
+        title={confirm==='aceptar'?'¿Enviar al coordinador?':confirm==='anular'?'¿Confirmar anulación?':confirm==='segunda'?'¿Enviar a segunda opinión?':'¿Rechazar este caso?'}
+        body={confirm==='aceptar'?'El caso pasa a la cola del coordinador con tu validación.':confirm==='anular'?'Quedará registrado tu override con el motivo y categoría.':confirm==='segunda'?'El caso se enviará a otro analista. Tú mantienes la decisión final.':'El caso se cierra. El cliente recibe notificación. Esta acción se puede deshacer durante los próximos 30 segundos.'}
+        confirmLabel={confirm==='aceptar'?'Sí, enviar':confirm==='anular'?'Sí, anular':confirm==='segunda'?'Sí, enviar':'Sí, rechazar'}
+        danger={confirm==='rechazar'}
+        onConfirm={()=>{ const a=confirm; setConfirm(null); if(a==='aceptar')onValidar?.(); if(a==='rechazar')onRechazar?.(); if(a==='anular')onAnular?.(); if(a==='segunda')onSegunda?.(); }}
+        onCancel={()=>setConfirm(null)}
+      />}
+    </div>
+  );
+}
+
+/* U1, U6 FIX: Toast & Confirm modal */
+function Toast({ msg, onDone, onUndo }) {
+  useEffect(()=>{ const t=setTimeout(onDone,5000); return ()=>clearTimeout(t); },[]);
+  return (
+    <div style={{position:'fixed',bottom:30,left:'50%',transform:'translateX(-50%)',background:C.g900,color:'#fff',padding:'12px 18px',borderRadius:10,fontSize:13,zIndex:500,boxShadow:'0 10px 30px rgba(0,0,0,0.3)',display:'flex',alignItems:'center',gap:14,animation:'fadeUp 0.25s ease'}}>
+      <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="10" fill={C.success}/><path d="M6.5 11l3 3 6-6" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      {msg}
+      {onUndo&&<button onClick={()=>{onUndo();onDone();}} style={{background:'transparent',border:`1px solid rgba(255,255,255,0.4)`,color:'#fff',padding:'4px 10px',borderRadius:6,fontSize:12,cursor:'pointer',fontFamily:'Roboto'}}>Deshacer</button>}
+    </div>
+  );
+}
+function ConfirmModal({ title, body, confirmLabel, danger=false, onConfirm, onCancel }) {
+  return (
+    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',zIndex:400,display:'flex',alignItems:'center',justifyContent:'center',padding:20,animation:'fadeUp 0.2s ease'}} onClick={onCancel}>
+      <div onClick={e=>e.stopPropagation()} style={{background:C.white,borderRadius:16,padding:'26px 24px 20px',maxWidth:420,width:'100%',boxShadow:'0 20px 60px rgba(0,0,0,0.25)',animation:'pop 0.2s ease'}}>
+        <h3 style={{fontSize:17,fontWeight:700,color:C.g900,marginBottom:8}}>{title}</h3>
+        <p style={{fontSize:13,color:C.g700,lineHeight:1.7,marginBottom:22}}>{body}</p>
+        <div style={{display:'flex',gap:10}}>
+          <button onClick={onCancel} style={{flex:1,padding:13,borderRadius:10,background:'transparent',color:C.g700,fontSize:14,fontWeight:500,border:`1px solid ${C.g200}`,cursor:'pointer',fontFamily:'Roboto'}}>Cancelar</button>
+          <button onClick={onConfirm} style={{flex:1,padding:13,borderRadius:10,background:danger?C.danger:C.success,color:'#fff',fontSize:14,fontWeight:600,border:'none',cursor:'pointer',fontFamily:'Roboto'}}>{confirmLabel}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DesktopLayout({ sel, setSel, decisions, setDecisions, openSecondaryModal, setOpenSecondaryModal }) {
+  const c = CASES.find(x=>x.id===sel);
+  const [search, setSearch] = useState('');
+  // U6 FIX: separar buscador y filtro - no son lo mismo
+  const [estadoFilter, setEstadoFilter] = useState('todos');
+  const [toasts, setToasts] = useState([]);
+  function pushToast(msg, onUndo){ const id=Date.now(); setToasts(t=>[...t,{id,msg,onUndo}]); }
+  // Apply both: search by id/cedula, filter by estado
+  const filtered = CASES.filter(c=>{
+    if(search&&!c.id.toLowerCase().includes(search.toLowerCase())&&!c.name.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  });
+  return (
+    <div style={{display:'flex',height:'calc(100vh - 52px)',marginTop:52}}>
+      <div style={{width:'30%',borderRight:`1px solid ${C.g200}`,display:'flex',flexDirection:'column',background:C.white}}>
+        <div style={{padding:'14px 16px',borderBottom:`1px solid ${C.g200}`,flexShrink:0}}>
+          <div style={{fontSize:14,fontWeight:600,color:C.g900,marginBottom:10}}>Mi cola — {filtered.length} casos</div>
+          {/* U6 FIX: buscador con icono y placeholder claro */}
+          <div style={{position:'relative'}}>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)'}}>
+              <circle cx="6" cy="6" r="5" stroke={C.g500} strokeWidth="1.5"/><path d="M10 10l3 3" stroke={C.g500} strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+            <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar por solicitud o nombre" style={{width:'100%',padding:'8px 10px 8px 30px',borderRadius:8,border:`1px solid ${C.g200}`,fontSize:13,fontFamily:'Roboto',outline:'none',background:C.g50}} />
+          </div>
+          {/* U6 FIX: separación clara entre BUSCAR y FILTRAR */}
+          <div style={{display:'flex',alignItems:'center',gap:8,marginTop:10}}>
+            <span style={{fontSize:11,color:C.g500,textTransform:'uppercase',letterSpacing:'0.5px',fontWeight:600}}>Filtrar:</span>
+            <select value={estadoFilter} onChange={e=>setEstadoFilter(e.target.value)} style={{flex:1,padding:'7px 10px',borderRadius:8,border:`1px solid ${C.g200}`,fontSize:13,fontFamily:'Roboto',color:C.g700,background:C.white,outline:'none'}}>
+              <option value="todos">Todos los casos</option>
+              <option value="sin_revisar">Sin revisar</option>
+              <option value="en_revision">En revisión</option>
+              <option value="excepcion">Con excepción</option>
+            </select>
+          </div>
+        </div>
+        <div style={{flex:1,overflowY:'auto'}}>
+          {filtered.map(c=><CaseItem key={c.id} c={c} selected={c.id===sel} onClick={()=>setSel(c.id)} />)}
+        </div>
+      </div>
+      <div style={{flex:1,overflowY:'auto',padding:'20px 24px',display:'flex',flexDirection:'column',gap:16}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',flexShrink:0}}>
+          <div>
+            <div style={{fontSize:18,fontWeight:700,color:C.g900}}>{c.name}</div>
+            <div style={{fontSize:13,color:C.g500,marginTop:2}}>{c.id} · {c.monto} · {c.plazo} · {c.tipo}</div>
+          </div>
+          <div style={{display:'flex',gap:10}}>
+            {/* "Pedir segunda opinión" se integró como 4ta acción en ActionZone abajo para evitar duplicación */}
+          </div>
+        </div>
+        {/* U6 FIX: nuevo encabezado de seccion - "motor" no es ambiguo, ahora "Motor de decisión" */}
+        <div>
+          <p style={{fontSize:11,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.7px',color:C.g500,marginBottom:8}}>A — Recomendación del motor de decisión <span className="rite-tag">RITE U6</span></p>
+          <MotorCard c={c} />
+        </div>
+        <div>
+          <p style={{fontSize:11,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.7px',color:C.g500,marginBottom:8}}>B — Datos del cliente <span className="rite-tag">RITE U5</span></p>
+          <ClientTabs />
+        </div>
+        <div>
+          <p style={{fontSize:11,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.7px',color:C.g500,marginBottom:8}}>C — Consultas externas <span className="rite-tag">RITE U2</span></p>
+          <Integrations />
+        </div>
+        <div>
+          <p style={{fontSize:11,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.7px',color:C.g500,marginBottom:8}}>D — Acción</p>
+          {decisions[sel] ? (
+            <ResultBlock
+              decision={decisions[sel]}
+              onRevert={()=>setDecisions(d=>{const n={...d};delete n[sel];return n;})}
+              onNext={()=>{ const remaining=CASES.filter(x=>!decisions[x.id]&&x.id!==sel); const next=remaining[0]||CASES.find(x=>x.id!==sel); if(next){ setDecisions(d=>{const n={...d};delete n[sel];return n;}); setSel(next.id); } }}
+            />
+          ) : (
+            <ActionZone
+              onValidar={()=>{ setDecisions(d=>({...d,[sel]:'enviado'})); pushToast('Caso enviado al coordinador', ()=>setDecisions(d=>{const n={...d};delete n[sel];return n;})); }}
+              onRechazar={()=>{ setDecisions(d=>({...d,[sel]:'rechazado'})); pushToast('Caso rechazado', ()=>setDecisions(d=>{const n={...d};delete n[sel];return n;})); }}
+              onAnular={()=>{ setDecisions(d=>({...d,[sel]:'anulado'})); pushToast('Recomendación anulada — override registrado', ()=>setDecisions(d=>{const n={...d};delete n[sel];return n;})); }}
+              onSegunda={()=>{ setDecisions(d=>({...d,[sel]:'segunda'})); pushToast('Segunda opinión solicitada', ()=>setDecisions(d=>{const n={...d};delete n[sel];return n;})); }}
+            />
+          )}
+        </div>
+        <div style={{height:20}} />
+      </div>
+      {toasts.map(t=><Toast key={t.id} msg={t.msg} onUndo={t.onUndo} onDone={()=>setToasts(p=>p.filter(x=>x.id!==t.id))} />)}
+      {openSecondaryModal&&<ConfirmModal
+        title="¿Qué es 'Pedir segunda opinión'?"
+        body="Envía el caso a otro analista para que dé su lectura antes de que decidas. No transfiere el caso al coordinador. Tú mantienes la responsabilidad final. Esta acción se integró abajo, en la zona D — Acción del analista."
+        confirmLabel="Entendido"
+        onConfirm={()=>setOpenSecondaryModal(false)}
+        onCancel={()=>setOpenSecondaryModal(false)}
+      />}
+    </div>
+  );
+}
+
+function MobileLayout({ sel, setSel, decisions, setDecisions }) {
+  const [tab, setTab] = useState('cola');
+  const c = CASES.find(x=>x.id===sel);
+  return (
+    <div style={{display:'flex',flexDirection:'column',height:'calc(100vh - 52px)',marginTop:52}}>
+      <div style={{display:'flex',borderBottom:`1px solid ${C.g200}`,background:C.white,flexShrink:0}}>
+        {['cola','detalle'].map(t=>(
+          <button key={t} onClick={()=>setTab(t)} style={{flex:1,padding:'12px 0',background:'none',border:'none',borderBottom:tab===t?`2px solid ${C.magenta}`:'2px solid transparent',fontSize:14,fontWeight:tab===t?600:400,color:tab===t?C.magenta:C.g700,cursor:'pointer',fontFamily:'Roboto',textTransform:'capitalize'}}>
+            {t==='cola'?'Mi Cola':'Detalle'}
+          </button>
+        ))}
+      </div>
+      <div style={{flex:1,overflowY:'auto',background:C.g50}}>
+        {tab==='cola'&&CASES.map(c=>(
+          <div key={c.id} onClick={()=>{setSel(c.id);setTab('detalle');}} style={{background:C.white,borderBottom:`1px solid ${C.g200}`}}>
+            <CaseItem c={c} selected={c.id===sel} onClick={()=>{}} />
+          </div>
+        ))}
+        {tab==='detalle'&&c&&<div style={{padding:16,display:'flex',flexDirection:'column',gap:16}}>
+          <div>
+            <div style={{fontSize:17,fontWeight:700,color:C.g900}}>{c.name}</div>
+            <div style={{fontSize:13,color:C.g500}}>{c.id} · {c.monto}</div>
+          </div>
+          <MotorCard c={c} />
+          <ClientTabs />
+          <Integrations />
+          {decisions[sel] ? (
+            <ResultBlock
+              decision={decisions[sel]}
+              onRevert={()=>setDecisions(d=>{const n={...d};delete n[sel];return n;})}
+              onNext={()=>{ const remaining=CASES.filter(x=>!decisions[x.id]&&x.id!==sel); const next=remaining[0]||CASES.find(x=>x.id!==sel); if(next){ setDecisions(d=>{const n={...d};delete n[sel];return n;}); setSel(next.id); } }}
+            />
+          ) : (
+            <ActionZone
+              onValidar={()=>setDecisions(d=>({...d,[sel]:'enviado'}))}
+              onRechazar={()=>setDecisions(d=>({...d,[sel]:'rechazado'}))}
+              onAnular={()=>setDecisions(d=>({...d,[sel]:'anulado'}))}
+              onSegunda={()=>setDecisions(d=>({...d,[sel]:'segunda'}))}
+            />
+          )}
+        </div>}
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  const [sel, setSel] = useState('SOL-2024-0891');
+  const [device, setDevice] = useState('desktop');
+  const [decisions, setDecisions] = useState({});
+  const [openSecondaryModal, setOpenSecondaryModal] = useState(false);
+  return device==='desktop'
+    ? <div data-screen-label="P3 Analista v2 RITE"><NavBar device={device} setDevice={setDevice} /><DesktopLayout sel={sel} setSel={setSel} decisions={decisions} setDecisions={setDecisions} openSecondaryModal={openSecondaryModal} setOpenSecondaryModal={setOpenSecondaryModal} /></div>
+    : <div data-screen-label="P3 Analista v2 RITE móvil"><NavBar device={device} setDevice={setDevice} />
+        <div style={{display:'flex',justifyContent:'center',alignItems:'flex-start',background:'#EDECEA',paddingTop:20,paddingBottom:20,minHeight:'calc(100vh - 52px)',marginTop:52,overflowY:'auto'}}>
+          <div style={{width:390,background:C.white,borderRadius:24,overflow:'hidden',boxShadow:'0 20px 60px rgba(0,0,0,0.15)',position:'relative'}}>
+            <MobileLayout sel={sel} setSel={setSel} decisions={decisions} setDecisions={setDecisions} />
+          </div>
+        </div>
+      </div>;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

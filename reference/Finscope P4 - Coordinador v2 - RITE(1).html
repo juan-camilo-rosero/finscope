@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Finscope v2 — P4 Coordinador (Correcciones RITE)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Roboto',sans-serif;background:#F5F4F2;overflow:hidden;}
+    ::-webkit-scrollbar{width:5px;} ::-webkit-scrollbar-thumb{background:#DEDBD7;border-radius:3px;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+    @keyframes pop{from{opacity:0;transform:scale(0.92);}to{opacity:1;transform:scale(1);}}
+    .rite-tag{background:#fef3c7;color:#92400e;border:1px solid #fcd34d;border-radius:4px;padding:2px 6px;font-size:9px;font-weight:600;letter-spacing:0.3px;text-transform:uppercase;display:inline-block;margin-left:8px}
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect } = React;
+const C = { magenta:'#ee252a', magentaL:'rgba(238,37,42,0.08)', success:'#16a34a', successL:'#dcfce7', warn:'#f59e0b', warnL:'#fffbeb', danger:'#dc2626', dangerL:'#fef2f2', blue:'#3f5cdd', blueL:'#eff4ff', g900:'#212121', g700:'#616161', g500:'#9E9E9E', g200:'#EEEEEE', g50:'#FAFAFA', white:'#FFFFFF' };
+
+const QUEUE = [
+  { id:'SOL-2024-0871', name:'María Suárez',     monto:'$32.500.000', plazo:'48 meses', analista:'Pedro Gómez',   estado:'enviado',     tiempo:'Hace 12 min', anulado:false, vehiculo:'Renault Duster 2024',
+    cliente:{ cedula:'52.834.211', edad:42, ciudad:'Bogotá', ocupacion:'Empleada — sector salud', antiguedad:'7 años', ingreso:'$5.800.000', dti:'28 %', score:742, scoreLabel:'Bueno', mora:'Sin mora (36 m)', creditoActivo:'$18.500.000 al día', cuotaActual:'$512.000/mes' },
+    motor:{ recomendacion:'aprobar', confianza:'Alta', razones:['DTI dentro de rango (28 %)','Score 742 — categoría buena','Historial limpio últimos 36 meses','Ingresos verificados con SOI'] },
+    docs:[{n:'Cédula frontal',s:'ok'},{n:'Cédula reverso',s:'ok'},{n:'Foto vehículo',s:'ok'},{n:'Certificación laboral',s:'ok'}],
+    integ:[{n:'RUNT',s:'ok'},{n:'DataCrédito',s:'ok'},{n:'SOI',s:'ok'},{n:'SARLAFT',s:'ok',msg:'Sin coincidencias'}],
+    timeline:[{e:'Oferta activada por cliente',t:'28 abr · 09:14'},{e:'Documentos cargados',t:'28 abr · 09:32'},{e:'Motor evaluó: aprobar',t:'28 abr · 09:33'},{e:'Analista validó y envió',t:'Hace 12 min'}] },
+  { id:'SOL-2024-0872', name:'Juan Pérez',       monto:'$45.000.000', plazo:'60 meses', analista:'Luisa Vélez',  estado:'enviado',     tiempo:'Hace 28 min', anulado:true,  motivoAnulacion:'Excepción comercial — cliente VIP con relación de 12 años, ingresos no bancarizados parcialmente.', vehiculo:'Chevrolet Captiva 2023',
+    cliente:{ cedula:'79.451.022', edad:51, ciudad:'Medellín', ocupacion:'Independiente — comercio', antiguedad:'12 años con el banco', ingreso:'$9.200.000 (declarados)', dti:'42 %', score:688, scoreLabel:'Regular', mora:'1 mora leve (hace 18 m)', creditoActivo:'Sin créditos activos', cuotaActual:'—' },
+    motor:{ recomendacion:'revisar', confianza:'Media', razones:['DTI elevado (42 %) — supera umbral del 35 %','Score 688 — zona de revisión','Ingresos parcialmente no bancarizados','Mora leve en 2024'] },
+    docs:[{n:'Cédula frontal',s:'ok'},{n:'Cédula reverso',s:'ok'},{n:'Foto vehículo',s:'ok'},{n:'Extractos bancarios',s:'warn',msg:'Solo 2 de 3 meses'}],
+    integ:[{n:'RUNT',s:'ok'},{n:'DataCrédito',s:'ok'},{n:'SOI',s:'warn',msg:'Datos parciales'},{n:'SARLAFT',s:'ok',msg:'Sin coincidencias'}],
+    timeline:[{e:'Solicitud creada por ejecutivo',t:'27 abr · 16:20'},{e:'Documentos cargados',t:'28 abr · 08:10'},{e:'Motor evaluó: revisar',t:'28 abr · 08:11'},{e:'Analista anuló y propuso aprobar',t:'Hace 28 min'}] },
+  { id:'SOL-2024-0873', name:'Sofía Hernández',  monto:'$22.800.000', plazo:'36 meses', analista:'Pedro Gómez',  estado:'devuelto',    tiempo:'Hace 1 h',    anulado:false, motivoDevolucion:'Falta validación de ingresos del último trimestre', vehiculo:'Mazda 3 2024',
+    cliente:{ cedula:'1.020.453.876', edad:29, ciudad:'Bogotá', ocupacion:'Empleada — tecnología', antiguedad:'2 años', ingreso:'$4.100.000', dti:'31 %', score:715, scoreLabel:'Bueno', mora:'Sin mora (24 m)', creditoActivo:'Tarjeta $2.4M (al día)', cuotaActual:'$185.000/mes' },
+    motor:{ recomendacion:'aprobar', confianza:'Media', razones:['DTI dentro de rango','Score 715 — bueno','Antigüedad laboral corta (2 años)','Falta certificación de ingresos reciente'] },
+    docs:[{n:'Cédula frontal',s:'ok'},{n:'Cédula reverso',s:'ok'},{n:'Foto vehículo',s:'ok'},{n:'Certificación laboral',s:'warn',msg:'Vencida hace 4 meses'}],
+    integ:[{n:'RUNT',s:'ok'},{n:'DataCrédito',s:'ok'},{n:'SOI',s:'ok'},{n:'SARLAFT',s:'ok',msg:'Sin coincidencias'}],
+    timeline:[{e:'Oferta activada',t:'27 abr · 11:00'},{e:'Documentos cargados',t:'27 abr · 14:25'},{e:'Motor evaluó: aprobar',t:'27 abr · 14:26'},{e:'Analista validó',t:'27 abr · 18:10'},{e:'Coordinador devolvió',t:'Hace 1 h'}] },
+  { id:'SOL-2024-0874', name:'Andrés López',     monto:'$58.000.000', plazo:'60 meses', analista:'Camila Ríos',  estado:'enviado',     tiempo:'Hace 1.5 h',  anulado:false, vehiculo:'Toyota Hilux 2023',
+    cliente:{ cedula:'80.512.398', edad:38, ciudad:'Cali', ocupacion:'Empleado — manufactura', antiguedad:'9 años', ingreso:'$8.500.000', dti:'33 %', score:781, scoreLabel:'Muy bueno', mora:'Sin mora (60 m)', creditoActivo:'Hipoteca $120M (al día)', cuotaActual:'$1.450.000/mes' },
+    motor:{ recomendacion:'aprobar', confianza:'Alta', razones:['Score 781 — categoría muy buena','DTI controlado','Historial impecable últimos 5 años','Ingresos verificados con SOI'] },
+    docs:[{n:'Cédula frontal',s:'ok'},{n:'Cédula reverso',s:'ok'},{n:'Foto vehículo',s:'ok'},{n:'Certificación laboral',s:'ok'}],
+    integ:[{n:'RUNT',s:'ok'},{n:'DataCrédito',s:'ok'},{n:'SOI',s:'ok'},{n:'SARLAFT',s:'ok',msg:'Sin coincidencias'}],
+    timeline:[{e:'Oferta activada',t:'28 abr · 07:45'},{e:'Documentos cargados',t:'28 abr · 08:02'},{e:'Motor evaluó: aprobar',t:'28 abr · 08:03'},{e:'Analista validó',t:'Hace 1.5 h'}] },
+  { id:'SOL-2024-0875', name:'Patricia Cárdenas',monto:'$15.200.000', plazo:'24 meses', analista:'Luisa Vélez',  estado:'aprobado',    tiempo:'Hace 3 h',    anulado:false, vehiculo:'Renault Kwid 2024',
+    cliente:{ cedula:'43.118.762', edad:34, ciudad:'Barranquilla', ocupacion:'Empleada — educación', antiguedad:'5 años', ingreso:'$3.200.000', dti:'24 %', score:702, scoreLabel:'Bueno', mora:'Sin mora (36 m)', creditoActivo:'Sin créditos activos', cuotaActual:'—' },
+    motor:{ recomendacion:'aprobar', confianza:'Alta', razones:['DTI bajo (24 %)','Score 702 — bueno','Sin créditos activos','Ingresos verificados'] },
+    docs:[{n:'Cédula frontal',s:'ok'},{n:'Cédula reverso',s:'ok'},{n:'Foto vehículo',s:'ok'},{n:'Certificación laboral',s:'ok'}],
+    integ:[{n:'RUNT',s:'ok'},{n:'DataCrédito',s:'ok'},{n:'SOI',s:'ok'},{n:'SARLAFT',s:'ok',msg:'Sin coincidencias'}],
+    timeline:[{e:'Oferta activada',t:'27 abr · 14:30'},{e:'Documentos cargados',t:'27 abr · 15:12'},{e:'Motor evaluó: aprobar',t:'27 abr · 15:13'},{e:'Analista validó',t:'Hace 4 h'},{e:'Coordinador aprobó',t:'Hace 3 h'}] },
+];
+
+function Logo() {
+  return (
+    <div style={{display:'flex',alignItems:'center',gap:8}}>
+      <div style={{background:'#fff',borderRadius:7,padding:3,boxShadow:'0 1px 4px rgba(0,0,0,0.10)',display:'flex'}}>
+        <img src="uploads/imagen.png" width={26} height={26} alt="Finscope" style={{display:'block'}} />
+      </div>
+      <span style={{fontWeight:700,fontSize:17,color:C.g900,letterSpacing:'-0.4px'}}>Finscope</span>
+    </div>
+  );
+}
+
+function NavBar({ device, setDevice }) {
+  const pages = [
+    { label:'Cliente v2', href:'Finscope Prototype v2 - RITE.html' },
+    { label:'P3 Analista v2', href:'Finscope P3 - Analista v2 - RITE.html' },
+    { label:'P4 Coordinador v2', href:'Finscope P4 - Coordinador v2 - RITE.html', active:true },
+    { label:'📋 Resumen RITE', href:'RITE - Resumen.html' },
+  ];
+  return (
+    <div style={{height:52,background:C.white,borderBottom:`1px solid ${C.g200}`,display:'flex',alignItems:'center',padding:'0 20px',gap:20,position:'fixed',top:0,left:0,right:0,zIndex:100}}>
+      <Logo />
+      <div style={{display:'flex',gap:2,height:'100%',alignItems:'center',flex:1}}>
+        {pages.map(p=>(
+          <a key={p.label} href={p.href} style={{padding:'0 12px',height:'100%',display:'flex',alignItems:'center',fontSize:13,fontWeight:p.active?600:400,color:p.active?C.magenta:C.g700,borderBottom:p.active?`2px solid ${C.magenta}`:'2px solid transparent',textDecoration:'none'}}>
+            {p.label}
+          </a>
+        ))}
+      </div>
+      <button onClick={()=>setDevice(d=>d==='desktop'?'mobile':'desktop')} style={{display:'flex',alignItems:'center',gap:6,background:C.g50,border:`1px solid ${C.g200}`,borderRadius:8,padding:'6px 12px',fontSize:12,color:C.g700,cursor:'pointer',fontFamily:'Roboto'}}>
+        {device==='desktop'?'📱 Móvil':'🖥 Desktop'}
+      </button>
+      <div style={{display:'flex',alignItems:'center',gap:10}}>
+        <div style={{width:32,height:32,borderRadius:'50%',background:C.magenta,display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:13,fontWeight:600}}>JM</div>
+        <div style={{fontSize:13}}>
+          <div style={{fontWeight:500,color:C.g900}}>Juan Marín</div>
+          <div style={{fontSize:11,color:C.g500}}>Coordinador</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StatusBadge({ estado }) {
+  const map = {
+    enviado:    { color:C.blue,    bg:C.blueL,    label:'Pendiente revisión' },
+    devuelto:   { color:C.warn,    bg:C.warnL,    label:'Devuelto al analista' },
+    aprobado:   { color:C.success, bg:C.successL, label:'Aprobado' },
+    rechazado:  { color:C.danger,  bg:C.dangerL,  label:'Rechazado' },
+  };
+  const s = map[estado];
+  return (
+    <span style={{fontSize:11,fontWeight:600,color:s.color,background:s.bg,padding:'3px 8px',borderRadius:12,border:`1px solid ${s.color}30`,whiteSpace:'nowrap'}}>{s.label}</span>
+  );
+}
+
+/* U2 FIX desktop: row clickeable + estilo "tabla" intencional */
+function QueueRow({ c, selected, onClick }) {
+  return (
+    <tr onClick={onClick} style={{cursor:'pointer',background:selected?C.magentaL:C.white,borderLeft:selected?`3px solid ${C.magenta}`:'3px solid transparent'}}>
+      <td style={{padding:'12px 14px',fontSize:13,fontWeight:600,color:C.g900}}>{c.name}<div style={{fontSize:11,color:C.g500,fontWeight:400,marginTop:2}}>{c.id}</div></td>
+      <td style={{padding:'12px 14px',fontSize:13,color:C.g700}}>{c.monto}<div style={{fontSize:11,color:C.g500,marginTop:2}}>{c.plazo}</div></td>
+      <td style={{padding:'12px 14px',fontSize:13,color:C.g700}}>{c.analista}</td>
+      <td style={{padding:'12px 14px'}}>
+        <StatusBadge estado={c.estado} />
+        {c.anulado&&<div style={{fontSize:10,color:C.warn,marginTop:3,fontWeight:600}}>⚠ Override del analista</div>}
+      </td>
+      <td style={{padding:'12px 14px',fontSize:11,color:C.g500}}>{c.tiempo}</td>
+      <td style={{padding:'12px 14px',textAlign:'right'}}>
+        <span style={{fontSize:18,color:C.g500}}>›</span>
+      </td>
+    </tr>
+  );
+}
+
+/* U6 FIX: feedback con toast + undo */
+function Toast({ msg, onDone, onUndo }) {
+  useEffect(()=>{ const t=setTimeout(onDone,5000); return ()=>clearTimeout(t); },[]);
+  return (
+    <div style={{position:'fixed',bottom:30,left:'50%',transform:'translateX(-50%)',background:C.g900,color:'#fff',padding:'12px 18px',borderRadius:10,fontSize:13,zIndex:500,boxShadow:'0 10px 30px rgba(0,0,0,0.3)',display:'flex',alignItems:'center',gap:14,animation:'fadeUp 0.25s ease'}}>
+      <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="10" fill={C.success}/><path d="M6.5 11l3 3 6-6" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      {msg}
+      {onUndo&&<button onClick={()=>{onUndo();onDone();}} style={{background:'transparent',border:`1px solid rgba(255,255,255,0.4)`,color:'#fff',padding:'4px 10px',borderRadius:6,fontSize:12,cursor:'pointer',fontFamily:'Roboto'}}>Deshacer</button>}
+    </div>
+  );
+}
+
+function ConfirmModal({ title, body, confirmLabel, danger=false, onConfirm, onCancel }) {
+  return (
+    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',zIndex:400,display:'flex',alignItems:'center',justifyContent:'center',padding:20,animation:'fadeUp 0.2s ease'}} onClick={onCancel}>
+      <div onClick={e=>e.stopPropagation()} style={{background:C.white,borderRadius:16,padding:'26px 24px 20px',maxWidth:420,width:'100%',boxShadow:'0 20px 60px rgba(0,0,0,0.25)',animation:'pop 0.2s ease'}}>
+        <h3 style={{fontSize:17,fontWeight:700,color:C.g900,marginBottom:8}}>{title}</h3>
+        <p style={{fontSize:13,color:C.g700,lineHeight:1.7,marginBottom:22}}>{body}</p>
+        <div style={{display:'flex',gap:10}}>
+          <button onClick={onCancel} style={{flex:1,padding:13,borderRadius:10,background:'transparent',color:C.g700,fontSize:14,fontWeight:500,border:`1px solid ${C.g200}`,cursor:'pointer',fontFamily:'Roboto'}}>Cancelar</button>
+          <button onClick={onConfirm} style={{flex:1,padding:13,borderRadius:10,background:danger?C.danger:C.success,color:'#fff',fontSize:14,fontWeight:600,border:'none',cursor:'pointer',fontFamily:'Roboto'}}>{confirmLabel}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CaseDetailPanel({ c, onAprobar, onDevolver, onRechazar }) {
+  const [confirm, setConfirm] = useState(null);
+  const [motivoDev, setMotivoDev] = useState('');
+  const [showDevolverForm, setShowDevolverForm] = useState(false);
+  return (
+    <div style={{padding:'20px 24px',display:'flex',flexDirection:'column',gap:16}}>
+      <div>
+        <div style={{fontSize:18,fontWeight:700,color:C.g900}}>{c.name}</div>
+        <div style={{fontSize:13,color:C.g500,marginTop:2}}>{c.id} · {c.monto} · {c.plazo}</div>
+        <div style={{display:'flex',gap:8,marginTop:8,alignItems:'center'}}>
+          <StatusBadge estado={c.estado} />
+          {c.anulado&&<span style={{fontSize:11,color:C.warn,fontWeight:600,background:C.warnL,padding:'3px 8px',borderRadius:12,border:`1px solid ${C.warn}30`}}>⚠ Override del analista</span>}
+        </div>
+      </div>
+      {/* U6: Override claramente explicado */}
+      {c.anulado&&<div style={{borderRadius:12,background:C.warnL,border:`1px solid ${C.warn}40`,padding:14}}>
+        <p style={{fontSize:12,fontWeight:600,color:C.warn,marginBottom:6,textTransform:'uppercase',letterSpacing:'0.5px'}}>El analista anuló la sugerencia del motor</p>
+        <p style={{fontSize:13,color:C.g900,lineHeight:1.5}}>{c.motivoAnulacion}</p>
+        <p style={{fontSize:11,color:C.g700,marginTop:8}}>Analista: {c.analista}</p>
+      </div>}
+      {/* Estado del cliente — vista completa para no decidir a ciegas */}
+      {c.cliente&&<div style={{borderRadius:12,background:C.white,border:`1px solid ${C.g200}`,padding:16}}>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
+          <p style={{fontSize:11,fontWeight:600,color:C.g500,textTransform:'uppercase',letterSpacing:'0.7px'}}>A — Perfil del cliente</p>
+          <span style={{fontSize:11,color:C.g500}}>CC {c.cliente.cedula} · {c.cliente.edad} años · {c.cliente.ciudad}</span>
+        </div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:0}}>
+          {[['Ocupación',c.cliente.ocupacion],['Antigüedad',c.cliente.antiguedad],['Ingreso mensual',c.cliente.ingreso],['Score crediticio',`${c.cliente.score} · ${c.cliente.scoreLabel}`],['DTI estimado',c.cliente.dti],['Historial de pagos',c.cliente.mora],['Crédito activo',c.cliente.creditoActivo],['Cuota actual',c.cliente.cuotaActual]].map(([l,v],i)=>(
+            <div key={l} style={{padding:'8px 0',borderBottom:i<6?`1px solid ${C.g200}`:'none',paddingRight:i%2===0?12:0,paddingLeft:i%2===1?12:0,borderLeft:i%2===1?`1px solid ${C.g200}`:'none'}}>
+              <div style={{fontSize:11,color:C.g500,marginBottom:2}}>{l}</div>
+              <div style={{fontSize:13,color:C.g900,fontWeight:500}}>{v}</div>
+            </div>
+          ))}
+        </div>
+      </div>}
+      {/* Recomendación del motor */}
+      {c.motor&&<div style={{borderRadius:12,background:C.white,border:`1px solid ${C.g200}`,padding:16}}>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
+          <p style={{fontSize:11,fontWeight:600,color:C.g500,textTransform:'uppercase',letterSpacing:'0.7px'}}>B — Recomendación del motor</p>
+          <span style={{fontSize:11,fontWeight:600,padding:'3px 9px',borderRadius:10,background:c.motor.recomendacion==='aprobar'?C.successL:c.motor.recomendacion==='revisar'?C.warnL:C.dangerL,color:c.motor.recomendacion==='aprobar'?C.success:c.motor.recomendacion==='revisar'?C.warn:C.danger,textTransform:'uppercase',letterSpacing:'0.5px'}}>
+            {c.motor.recomendacion} · Confianza {c.motor.confianza.toLowerCase()}
+          </span>
+        </div>
+        <ul style={{listStyle:'none',padding:0,margin:0}}>
+          {c.motor.razones.map((r,i)=>(
+            <li key={i} style={{display:'flex',gap:8,padding:'5px 0',fontSize:13,color:C.g700,lineHeight:1.5}}>
+              <span style={{color:C.g500,flexShrink:0}}>•</span>{r}
+            </li>
+          ))}
+        </ul>
+      </div>}
+      {/* Documentos */}
+      {c.docs&&<div style={{borderRadius:12,background:C.white,border:`1px solid ${C.g200}`,padding:16}}>
+        <p style={{fontSize:11,fontWeight:600,color:C.g500,textTransform:'uppercase',letterSpacing:'0.7px',marginBottom:10}}>C — Documentos cargados</p>
+        {c.docs.map((d,i)=>(
+          <div key={d.n} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'7px 0',borderBottom:i<c.docs.length-1?`1px solid ${C.g200}`:'none',fontSize:13}}>
+            <span style={{color:C.g900}}>{d.n}</span>
+            <span style={{display:'flex',alignItems:'center',gap:6,fontSize:12,color:d.s==='ok'?C.success:C.warn,fontWeight:500}}>
+              <span style={{width:8,height:8,borderRadius:'50%',background:d.s==='ok'?C.success:C.warn}} />
+              {d.s==='ok'?'Validado':(d.msg||'Por validar')}
+            </span>
+          </div>
+        ))}
+      </div>}
+      {/* Integraciones */}
+      {c.integ&&<div style={{borderRadius:12,background:C.white,border:`1px solid ${C.g200}`,padding:16}}>
+        <p style={{fontSize:11,fontWeight:600,color:C.g500,textTransform:'uppercase',letterSpacing:'0.7px',marginBottom:10}}>D — Consultas externas</p>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+          {c.integ.map(it=>(
+            <div key={it.n} style={{display:'flex',alignItems:'center',gap:8,padding:'7px 10px',background:C.g50,borderRadius:8,border:`1px solid ${C.g200}`}}>
+              <span style={{width:8,height:8,borderRadius:'50%',background:it.s==='ok'?C.success:C.warn,flexShrink:0}} />
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:12,fontWeight:500,color:C.g900}}>{it.n}</div>
+                {it.msg&&<div style={{fontSize:11,color:C.g500,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{it.msg}</div>}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>}
+      {/* Detalle del crédito + Timeline */}
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+        <div style={{borderRadius:12,background:C.white,border:`1px solid ${C.g200}`,padding:16}}>
+          <p style={{fontSize:11,fontWeight:600,color:C.g500,textTransform:'uppercase',letterSpacing:'0.7px',marginBottom:10}}>E — Detalle del crédito</p>
+          {[['Vehículo',c.vehiculo],['Concesionario','Aliado Finandina'],['Tasa propuesta','15,2 % E.A.'],['Cuota mensual','$890.000'],['Analista',c.analista]].map(([l,v],i)=>(
+            <div key={l} style={{display:'flex',justifyContent:'space-between',padding:'6px 0',borderBottom:i<4?`1px solid ${C.g200}`:'none',fontSize:12}}>
+              <span style={{color:C.g500}}>{l}</span><span style={{color:C.g900,fontWeight:500,textAlign:'right'}}>{v}</span>
+            </div>
+          ))}
+        </div>
+        {c.timeline&&<div style={{borderRadius:12,background:C.white,border:`1px solid ${C.g200}`,padding:16}}>
+          <p style={{fontSize:11,fontWeight:600,color:C.g500,textTransform:'uppercase',letterSpacing:'0.7px',marginBottom:10}}>F — Trazabilidad</p>
+          {c.timeline.map((t,i)=>(
+            <div key={i} style={{display:'flex',gap:10,paddingBottom:i<c.timeline.length-1?10:0}}>
+              <div style={{display:'flex',flexDirection:'column',alignItems:'center'}}>
+                <div style={{width:8,height:8,borderRadius:'50%',background:i===c.timeline.length-1?C.magenta:C.g500,marginTop:5}} />
+                {i<c.timeline.length-1&&<div style={{width:1,flex:1,background:C.g200,marginTop:2}} />}
+              </div>
+              <div style={{flex:1,paddingBottom:i<c.timeline.length-1?6:0}}>
+                <div style={{fontSize:12,color:C.g900,fontWeight:i===c.timeline.length-1?600:400}}>{t.e}</div>
+                <div style={{fontSize:11,color:C.g500,marginTop:1}}>{t.t}</div>
+              </div>
+            </div>
+          ))}
+        </div>}
+      </div>
+      {c.estado!=='aprobado'&&c.estado!=='rechazado'&&<div style={{borderRadius:12,background:C.white,border:`1px solid ${C.g200}`,padding:16}}>
+        <p style={{fontSize:14,fontWeight:600,color:C.g900,marginBottom:12}}>Decisión final</p>
+        <div style={{display:'flex',flexDirection:'column',gap:10}}>
+          <button onClick={()=>setConfirm('aprobar')} style={{padding:13,borderRadius:9,background:C.success,color:'#fff',fontSize:14,fontWeight:600,border:'none',cursor:'pointer',fontFamily:'Roboto',boxShadow:`0 4px 12px ${C.success}40`}}>
+            ✓ Aprobar y enviar a desembolso
+          </button>
+          <button onClick={()=>setShowDevolverForm(s=>!s)} style={{padding:11,borderRadius:9,background:'transparent',color:C.warn,fontSize:13,fontWeight:500,border:`1.5px solid ${C.warn}`,cursor:'pointer',fontFamily:'Roboto'}}>
+            ↺ Devolver al analista
+          </button>
+          {showDevolverForm&&<div style={{background:C.warnL,borderRadius:9,padding:12,border:`1px solid ${C.warn}30`}}>
+            <p style={{fontSize:12,color:C.g700,marginBottom:8}}>Indica qué falta validar:</p>
+            <textarea value={motivoDev} onChange={e=>setMotivoDev(e.target.value)} placeholder="p. ej. Faltan certificados de ingresos del último trimestre" style={{width:'100%',borderRadius:7,border:`1px solid ${C.g200}`,padding:9,fontSize:12,fontFamily:'Roboto',resize:'none',height:64,outline:'none'}} />
+            <button disabled={motivoDev.length<10} onClick={()=>setConfirm('devolver')} style={{marginTop:8,width:'100%',padding:10,borderRadius:7,background:motivoDev.length>=10?C.warn:C.g200,color:motivoDev.length>=10?'#fff':C.g500,fontSize:13,fontWeight:600,border:'none',cursor:motivoDev.length>=10?'pointer':'not-allowed',fontFamily:'Roboto'}}>Confirmar devolución</button>
+          </div>}
+          <button onClick={()=>setConfirm('rechazar')} style={{padding:11,borderRadius:9,background:'transparent',color:C.danger,fontSize:13,fontWeight:500,border:`1.5px solid ${C.danger}`,cursor:'pointer',fontFamily:'Roboto'}}>
+            ✕ Rechazar definitivamente
+          </button>
+        </div>
+      </div>}
+      {/* U6: doble confirmación con undo */}
+      {confirm==='aprobar'&&<ConfirmModal
+        title="¿Aprobar este caso?"
+        body={`Confirma la aprobación de ${c.monto} para ${c.name}. El caso pasa a desembolso. Tendrás 30 segundos para deshacer.`}
+        confirmLabel="Sí, aprobar"
+        onConfirm={()=>{setConfirm(null);onAprobar?.();}}
+        onCancel={()=>setConfirm(null)}
+      />}
+      {confirm==='devolver'&&<ConfirmModal
+        title="¿Devolver al analista?"
+        body={`El analista ${c.analista} recibirá una notificación con tu motivo. El caso vuelve a su cola con tu comentario.`}
+        confirmLabel="Sí, devolver"
+        onConfirm={()=>{setConfirm(null);setShowDevolverForm(false);onDevolver?.(motivoDev);}}
+        onCancel={()=>setConfirm(null)}
+      />}
+      {confirm==='rechazar'&&<ConfirmModal
+        title="¿Rechazar definitivamente?"
+        body="El cliente recibirá notificación. Esta acción cierra el caso y no se puede deshacer pasados 30 segundos."
+        confirmLabel="Sí, rechazar"
+        danger
+        onConfirm={()=>{setConfirm(null);onRechazar?.();}}
+        onCancel={()=>setConfirm(null)}
+      />}
+    </div>
+  );
+}
+
+function DesktopLayout({ data, setData }) {
+  const [sel, setSel] = useState(data[0].id);
+  const [search, setSearch] = useState('');
+  const [filterEstado, setFilterEstado] = useState('todos');
+  const [toasts, setToasts] = useState([]);
+  function push(msg, onUndo){ const id=Date.now(); setToasts(t=>[...t,{id,msg,onUndo}]); }
+  const filtered = data.filter(c=>{
+    if(search&&!c.id.toLowerCase().includes(search.toLowerCase())&&!c.name.toLowerCase().includes(search.toLowerCase())) return false;
+    if(filterEstado!=='todos'&&c.estado!==filterEstado) return false;
+    return true;
+  });
+  const c = data.find(x=>x.id===sel) || data[0];
+  return (
+    <div style={{display:'flex',height:'calc(100vh - 52px)',marginTop:52}}>
+      <div style={{width:'58%',display:'flex',flexDirection:'column',background:C.white,borderRight:`1px solid ${C.g200}`}}>
+        <div style={{padding:'14px 20px',borderBottom:`1px solid ${C.g200}`,flexShrink:0}}>
+          <div style={{display:'flex',alignItems:'baseline',justifyContent:'space-between',marginBottom:12}}>
+            <h2 style={{fontSize:16,fontWeight:600,color:C.g900}}>Cola de coordinación — {filtered.length} casos</h2>
+            <span className="rite-tag">RITE U2 · U6</span>
+          </div>
+          <div style={{display:'flex',gap:10}}>
+            {/* U6 FIX: buscador */}
+            <div style={{position:'relative',flex:1}}>
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)'}}>
+                <circle cx="6" cy="6" r="5" stroke={C.g500} strokeWidth="1.5"/><path d="M10 10l3 3" stroke={C.g500} strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+              <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar por solicitud o nombre" style={{width:'100%',padding:'8px 10px 8px 30px',borderRadius:8,border:`1px solid ${C.g200}`,fontSize:13,fontFamily:'Roboto',outline:'none',background:C.g50}} />
+            </div>
+            {/* U6 FIX: filtro como estado */}
+            <select value={filterEstado} onChange={e=>setFilterEstado(e.target.value)} style={{padding:'8px 10px',borderRadius:8,border:`1px solid ${C.g200}`,fontSize:13,fontFamily:'Roboto',color:C.g700,background:C.white,outline:'none',width:200}}>
+              <option value="todos">Todos los estados</option>
+              <option value="enviado">Pendientes revisión</option>
+              <option value="devuelto">Devueltos al analista</option>
+              <option value="aprobado">Aprobados</option>
+            </select>
+          </div>
+        </div>
+        <div style={{flex:1,overflowY:'auto'}}>
+          <table style={{width:'100%',borderCollapse:'collapse'}}>
+            <thead>
+              <tr style={{background:C.g50,position:'sticky',top:0,zIndex:1}}>
+                <th style={{padding:'10px 14px',textAlign:'left',fontSize:11,fontWeight:600,color:C.g500,textTransform:'uppercase',letterSpacing:'0.5px',borderBottom:`1px solid ${C.g200}`}}>Cliente</th>
+                <th style={{padding:'10px 14px',textAlign:'left',fontSize:11,fontWeight:600,color:C.g500,textTransform:'uppercase',letterSpacing:'0.5px',borderBottom:`1px solid ${C.g200}`}}>Monto</th>
+                <th style={{padding:'10px 14px',textAlign:'left',fontSize:11,fontWeight:600,color:C.g500,textTransform:'uppercase',letterSpacing:'0.5px',borderBottom:`1px solid ${C.g200}`}}>Analista</th>
+                <th style={{padding:'10px 14px',textAlign:'left',fontSize:11,fontWeight:600,color:C.g500,textTransform:'uppercase',letterSpacing:'0.5px',borderBottom:`1px solid ${C.g200}`}}>Estado</th>
+                <th style={{padding:'10px 14px',textAlign:'left',fontSize:11,fontWeight:600,color:C.g500,textTransform:'uppercase',letterSpacing:'0.5px',borderBottom:`1px solid ${C.g200}`}}>Tiempo</th>
+                <th style={{padding:'10px 14px',borderBottom:`1px solid ${C.g200}`}}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map(c=><QueueRow key={c.id} c={c} selected={c.id===sel} onClick={()=>setSel(c.id)} />)}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div style={{flex:1,overflowY:'auto',background:C.g50}}>
+        <CaseDetailPanel
+          c={c}
+          onAprobar={()=>{setData(d=>d.map(x=>x.id===c.id?{...x,estado:'aprobado'}:x));push(`Caso ${c.id} aprobado`, ()=>setData(d=>d.map(x=>x.id===c.id?{...x,estado:'enviado'}:x)));}}
+          onDevolver={(motivo)=>{setData(d=>d.map(x=>x.id===c.id?{...x,estado:'devuelto',motivoDevolucion:motivo}:x));push(`Caso ${c.id} devuelto al analista`, ()=>setData(d=>d.map(x=>x.id===c.id?{...x,estado:'enviado'}:x)));}}
+          onRechazar={()=>{setData(d=>d.map(x=>x.id===c.id?{...x,estado:'rechazado'}:x));push(`Caso ${c.id} rechazado`, ()=>setData(d=>d.map(x=>x.id===c.id?{...x,estado:'enviado'}:x)));}}
+        />
+      </div>
+      {toasts.map(t=><Toast key={t.id} msg={t.msg} onUndo={t.onUndo} onDone={()=>setToasts(p=>p.filter(x=>x.id!==t.id))} />)}
+    </div>
+  );
+}
+
+/* U2 FIX móvil: estado de devolución claro y row clickeable */
+function MobileLayout({ data, setData }) {
+  const [tab, setTab] = useState('cola');
+  const [sel, setSel] = useState(null);
+  const c = data.find(x=>x.id===sel);
+  return (
+    <div style={{display:'flex',flexDirection:'column',height:'calc(100vh - 52px)',marginTop:52,background:C.g50}}>
+      {!sel&&<div style={{flex:1,overflowY:'auto'}}>
+        <div style={{padding:'14px 16px',background:C.white,borderBottom:`1px solid ${C.g200}`}}>
+          <h2 style={{fontSize:16,fontWeight:600,color:C.g900,marginBottom:6}}>Mi cola — {data.length} casos</h2>
+          <p style={{fontSize:11,color:C.g500}}>Toca un caso para ver el detalle y decidir.</p>
+        </div>
+        {/* U2 FIX: cards completas son clickeables; estado bien visible */}
+        {data.map(c=>(
+          <div key={c.id} onClick={()=>setSel(c.id)} style={{padding:'14px 16px',background:C.white,borderBottom:`1px solid ${C.g200}`,cursor:'pointer',display:'flex',gap:12,alignItems:'flex-start'}}>
+            <div style={{flex:1}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
+                <span style={{fontSize:14,fontWeight:600,color:C.g900}}>{c.name}</span>
+                <span style={{fontSize:11,color:C.g500}}>{c.tiempo}</span>
+              </div>
+              <div style={{fontSize:12,color:C.g500,marginBottom:8}}>{c.id} · {c.monto}</div>
+              <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
+                <StatusBadge estado={c.estado} />
+                {c.anulado&&<span style={{fontSize:10,color:C.warn,fontWeight:600,background:C.warnL,padding:'2px 6px',borderRadius:10,border:`1px solid ${C.warn}30`}}>⚠ Override</span>}
+              </div>
+              {/* U2 FIX: motivo de devolución VISIBLE en móvil */}
+              {c.estado==='devuelto'&&c.motivoDevolucion&&<div style={{marginTop:8,padding:'8px 10px',background:C.warnL,borderRadius:7,border:`1px solid ${C.warn}30`}}>
+                <div style={{fontSize:10,fontWeight:600,color:C.warn,textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:2}}>Motivo de devolución:</div>
+                <div style={{fontSize:12,color:C.g900,lineHeight:1.4}}>{c.motivoDevolucion}</div>
+              </div>}
+            </div>
+            <span style={{fontSize:18,color:C.g500,paddingTop:2}}>›</span>
+          </div>
+        ))}
+      </div>}
+      {sel&&c&&<div style={{flex:1,overflowY:'auto'}}>
+        <button onClick={()=>setSel(null)} style={{background:C.white,border:'none',borderBottom:`1px solid ${C.g200}`,padding:'12px 16px',width:'100%',display:'flex',alignItems:'center',gap:8,color:C.magenta,fontSize:14,cursor:'pointer',fontFamily:'Roboto'}}>
+          <svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M6 2L2 7l4 5" stroke={C.magenta} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          Volver a la cola
+        </button>
+        <CaseDetailPanel
+          c={c}
+          onAprobar={()=>{setData(d=>d.map(x=>x.id===c.id?{...x,estado:'aprobado'}:x));setSel(null);}}
+          onDevolver={(m)=>{setData(d=>d.map(x=>x.id===c.id?{...x,estado:'devuelto',motivoDevolucion:m}:x));setSel(null);}}
+          onRechazar={()=>{setData(d=>d.map(x=>x.id===c.id?{...x,estado:'rechazado'}:x));setSel(null);}}
+        />
+      </div>}
+    </div>
+  );
+}
+
+function App() {
+  const [data, setData] = useState(QUEUE);
+  const [device, setDevice] = useState('desktop');
+  return device==='desktop'
+    ? <div data-screen-label="P4 Coordinador v2 RITE"><NavBar device={device} setDevice={setDevice} /><DesktopLayout data={data} setData={setData} /></div>
+    : <div data-screen-label="P4 Coordinador v2 RITE móvil"><NavBar device={device} setDevice={setDevice} />
+        <div style={{display:'flex',justifyContent:'center',alignItems:'flex-start',background:'#EDECEA',paddingTop:20,paddingBottom:20,minHeight:'calc(100vh - 52px)',marginTop:52,overflowY:'auto'}}>
+          <div style={{width:390,background:C.white,borderRadius:24,overflow:'hidden',boxShadow:'0 20px 60px rgba(0,0,0,0.15)'}}>
+            <MobileLayout data={data} setData={setData} />
+          </div>
+        </div>
+      </div>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

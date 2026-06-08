@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Finscope — P11 QR Concesionario</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet"/>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script src="ios-frame.jsx" type="text/babel"></script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Roboto',sans-serif;background:#F5F4F2;}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+    @keyframes countDown{from{stroke-dashoffset:0;}to{stroke-dashoffset:283;}}
+  </style>
+</head>
+<body><div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect } = React;
+const C = {magenta:'#ee252a',magentaL:'rgba(238,37,42,0.08)',blue:'#3f5cdd',g900:'#212121',g700:'#616161',g500:'#9E9E9E',g200:'#EEEEEE',g50:'#FAFAFA',white:'#FFFFFF'};
+
+/* QR Code SVG generado geométricamente (placeholder visual realista) */
+function QRCode({size=200,color='#212121'}){
+  const cells=[];
+  // Patrón fijo tipo QR — genera una grilla 21x21 con los finder patterns + datos aleatorios
+  const seed=[
+    [1,1,1,1,1,1,1,0,1,0,1,0,1,0,1,1,1,1,1,1,1],
+    [1,0,0,0,0,0,1,0,1,1,0,0,1,0,1,0,0,0,0,0,1],
+    [1,0,1,1,1,0,1,0,0,1,1,1,0,0,1,0,1,1,1,0,1],
+    [1,0,1,1,1,0,1,0,1,0,0,1,1,0,1,0,1,1,1,0,1],
+    [1,0,1,1,1,0,1,0,0,1,0,0,0,0,1,0,1,1,1,0,1],
+    [1,0,0,0,0,0,1,0,1,1,0,1,0,0,1,0,0,0,0,0,1],
+    [1,1,1,1,1,1,1,0,1,0,1,0,1,0,1,1,1,1,1,1,1],
+    [0,0,0,0,0,0,0,0,1,1,0,1,1,0,0,0,0,0,0,0,0],
+    [1,1,0,1,0,1,1,0,1,0,1,1,0,1,1,0,1,0,1,1,0],
+    [0,1,1,0,1,0,0,1,0,1,0,0,1,1,0,1,0,1,1,0,1],
+    [1,0,1,1,0,1,1,0,1,0,1,0,1,0,1,1,0,1,0,1,1],
+    [0,1,0,0,1,1,0,1,0,1,1,0,0,1,0,1,1,0,1,0,0],
+    [1,1,1,0,1,0,1,0,1,1,0,1,1,0,1,0,1,1,0,1,1],
+    [0,0,0,0,0,0,0,0,1,0,1,1,0,1,0,0,1,0,1,0,1],
+    [1,1,1,1,1,1,1,0,0,1,1,0,1,0,1,0,0,1,1,0,1],
+    [1,0,0,0,0,0,1,0,1,0,0,1,0,1,0,1,0,1,0,1,0],
+    [1,0,1,1,1,0,1,0,1,1,0,0,1,1,0,0,1,0,1,1,0],
+    [1,0,1,1,1,0,1,0,0,1,1,0,0,0,1,1,0,1,0,0,1],
+    [1,0,1,1,1,0,1,0,1,0,1,1,0,1,0,0,1,1,0,1,0],
+    [1,0,0,0,0,0,1,0,0,1,0,0,1,0,1,0,0,0,1,0,1],
+    [1,1,1,1,1,1,1,0,1,1,0,1,0,1,0,1,1,0,0,1,1],
+  ];
+  const cellSize=size/21;
+  seed.forEach((row,r)=>row.forEach((v,c)=>{if(v)cells.push({x:c*cellSize,y:r*cellSize,s:cellSize-0.5});}));
+  return(
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{display:'block'}}>
+      <rect width={size} height={size} fill="white"/>
+      {cells.map((c,i)=><rect key={i} x={c.x} y={c.y} width={c.s} height={c.s} fill={color}/>)}
+    </svg>
+  );
+}
+
+/* Contador circular de vigencia */
+function Timer({seconds,total}){
+  const pct=seconds/total;
+  const r=18; const circ=2*Math.PI*r;
+  const offset=circ*(1-pct);
+  const color=seconds<60?'#ef4444':seconds<180?'#f59e0b':'#22c55e';
+  const mins=Math.floor(seconds/60); const secs=seconds%60;
+  return(
+    <div style={{display:'flex',alignItems:'center',gap:8}}>
+      <svg width={44} height={44} viewBox="0 0 44 44">
+        <circle cx={22} cy={22} r={r} fill="none" stroke={C.g200} strokeWidth={3}/>
+        <circle cx={22} cy={22} r={r} fill="none" stroke={color} strokeWidth={3} strokeLinecap="round"
+          strokeDasharray={circ} strokeDashoffset={offset} transform="rotate(-90 22 22)" style={{transition:'stroke-dashoffset 1s linear,stroke 0.5s'}}/>
+      </svg>
+      <div>
+        <div style={{fontSize:16,fontWeight:700,color,lineHeight:1}}>{mins}:{String(secs).padStart(2,'0')}</div>
+        <div style={{fontSize:10,color:C.g500}}>restante</div>
+      </div>
+    </div>
+  );
+}
+
+/* Vista del vendedor (lo que ve al escanear) */
+function VistaVendedor({onBack}){
+  return(
+    <div style={{background:'#f8fafc',minHeight:'100%',paddingBottom:40,animation:'fadeIn 0.3s ease'}}>
+      <div style={{background:C.magenta,padding:'24px 20px 20px',textAlign:'center'}}>
+        <div style={{display:'inline-flex',alignItems:'center',gap:8,background:'rgba(255,255,255,0.15)',borderRadius:8,padding:'4px 12px',marginBottom:16}}>
+          <div style={{background:'#fff',borderRadius:5,padding:2,display:'flex'}}><img src="uploads/imagen.png" width={16} height={16} alt="Finscope" style={{display:'block'}}/></div>
+          <span style={{fontSize:13,fontWeight:600,color:'#fff'}}>Finscope</span>
+        </div>
+        <div style={{fontSize:11,color:'rgba(255,255,255,0.8)',fontWeight:500,textTransform:'uppercase',letterSpacing:'0.8px',marginBottom:8}}>Pre-aprobado por Banco Finandina</div>
+        <div style={{width:48,height:2,background:'rgba(255,255,255,0.4)',borderRadius:1,margin:'0 auto'}}/>
+      </div>
+      <div style={{padding:'24px 20px',display:'flex',flexDirection:'column',gap:14}}>
+        <div style={{background:C.white,borderRadius:14,padding:18,boxShadow:'0 2px 10px rgba(0,0,0,0.06)'}}>
+          <div style={{fontSize:12,color:C.g500,marginBottom:4}}>Cliente</div>
+          <div style={{fontSize:20,fontWeight:700,color:C.g900}}>Carlos M.</div>
+        </div>
+        {[['Cupo pre-aprobado','$42.000.000'],['Cuota desde','$858.000/mes'],['Plazo','Hasta 60 meses'],['Solicitud','SOL-2024-0891']].map(([l,v])=>(
+          <div key={l} style={{background:C.white,borderRadius:12,padding:'14px 16px',boxShadow:'0 1px 6px rgba(0,0,0,0.04)',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+            <span style={{fontSize:13,color:C.g500}}>{l}</span>
+            <span style={{fontSize:15,fontWeight:600,color:C.g900}}>{v}</span>
+          </div>
+        ))}
+        <div style={{background:C.magentaL,borderRadius:12,padding:'12px 16px',border:`1px solid rgba(238,37,42,0.15)`}}>
+          <p style={{fontSize:11,color:C.g700,lineHeight:1.6,textAlign:'center'}}>Los valores finales se confirman al cierre del trámite con el equipo de crédito de Finandina.</p>
+        </div>
+        <button onClick={onBack} style={{marginTop:4,padding:'12px',borderRadius:10,background:C.g50,color:C.g700,fontSize:13,border:`1px solid ${C.g200}`,cursor:'pointer'}}>← Volver al QR</button>
+      </div>
+    </div>
+  );
+}
+
+/* Pantalla principal QR */
+function QRScreen(){
+  const TOTAL=600; // 10 minutos
+  const [secs,setSecs]=useState(TOTAL);
+  const [regenerated,setRegenerated]=useState(false);
+  const [vistaVendedor,setVistaVendedor]=useState(false);
+
+  useEffect(()=>{
+    const t=setInterval(()=>setSecs(s=>s>0?s-1:0),1000);
+    return ()=>clearInterval(t);
+  },[]);
+
+  function regen(){setSecs(TOTAL);setRegenerated(true);setTimeout(()=>setRegenerated(false),2000);}
+
+  if(vistaVendedor) return <VistaVendedor onBack={()=>setVistaVendedor(false)}/>;
+
+  return(
+    <div style={{background:C.white,minHeight:'100%',paddingBottom:40,display:'flex',flexDirection:'column'}}>
+      {/* Header */}
+      <div style={{padding:'68px 20px 18px',borderBottom:`1px solid ${C.g200}`,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div style={{display:'flex',alignItems:'center',gap:8}}>
+          <div style={{background:'#fff',borderRadius:7,padding:3,boxShadow:'0 1px 4px rgba(0,0,0,0.10)',display:'flex'}}>
+            <img src="uploads/imagen.png" width={20} height={20} alt="Finscope" style={{display:'block'}}/>
+          </div>
+          <span style={{fontWeight:700,fontSize:15,color:C.g900,letterSpacing:'-0.3px'}}>Finscope</span>
+        </div>
+        <Timer seconds={secs} total={TOTAL}/>
+      </div>
+
+      {/* Sección 1 — QR */}
+      <div style={{padding:'28px 20px 20px',display:'flex',flexDirection:'column',alignItems:'center',gap:12}}>
+        <span style={{fontSize:11,fontWeight:600,color:C.magenta,textTransform:'uppercase',letterSpacing:'0.8px',background:C.magentaL,borderRadius:6,padding:'3px 10px'}}>Pre-aprobado · Carlos M.</span>
+        <div style={{borderRadius:16,overflow:'hidden',padding:16,background:C.white,boxShadow:'0 4px 20px rgba(0,0,0,0.10)',border:`1px solid ${C.g200}`}}>
+          <QRCode size={200}/>
+        </div>
+        {secs===0&&<div style={{background:'#fef2f2',borderRadius:8,padding:'8px 14px',fontSize:12,color:'#dc2626',textAlign:'center'}}>Código expirado — regenera para continuar.</div>}
+        {regenerated&&<div style={{background:'#f0fdf4',borderRadius:8,padding:'8px 14px',fontSize:12,color:'#166534',textAlign:'center',animation:'fadeIn 0.2s ease'}}>✓ Código regenerado</div>}
+        <p style={{fontSize:13,color:C.g700,textAlign:'center',lineHeight:1.6}}>Muéstrale este código al vendedor en el concesionario.</p>
+        <p style={{fontSize:12,color:C.g500,textAlign:'center'}}>Válido por {Math.floor(secs/60)} min {secs%60} seg</p>
+      </div>
+
+      {/* Sección 2 — Acciones */}
+      <div style={{padding:'0 20px',display:'flex',flexDirection:'column',gap:10}}>
+        <button onClick={regen} style={{width:'100%',padding:13,borderRadius:12,background:C.g50,color:C.g700,fontSize:14,border:`1px solid ${C.g200}`,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13 3A7 7 0 105 13" stroke={C.g700} strokeWidth="1.6" strokeLinecap="round"/><path d="M13 3v4h-4" stroke={C.g700} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          Regenerar código
+        </button>
+        <button style={{width:'100%',padding:13,borderRadius:12,background:'#25d366',color:'#fff',fontSize:14,fontWeight:600,border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M14 8A6 6 0 11 2 8a6 6 0 0112 0z" fill="white" fillOpacity=".2"/><path d="M8 5v3l2 2" stroke="white" strokeWidth="1.5" strokeLinecap="round"/></svg>
+          Compartir por WhatsApp
+        </button>
+        <button onClick={()=>setVistaVendedor(true)} style={{width:'100%',padding:11,borderRadius:12,background:'transparent',color:C.blue,fontSize:13,border:`1px solid ${C.blue}30`,cursor:'pointer'}}>
+          Ver lo que verá el vendedor →
+        </button>
+      </div>
+
+      {/* Legal */}
+      <div style={{margin:'20px 20px 0',background:C.g50,borderRadius:10,padding:'10px 14px'}}>
+        <p style={{fontSize:11,color:C.g500,lineHeight:1.5}}>Este código contiene un token firmado de vigencia corta. Al expirar, el enlace deja de ser válido y no muestra información.</p>
+      </div>
+    </div>
+  );
+}
+
+function NavBar(){
+  const pages=[{label:'P1–P2',href:'Finscope Prototype.html'},{label:'P9',href:'Finscope P9 - Excepcion.html'},{label:'P10',href:'Finscope P10 - Espera.html'},{label:'P11 QR',href:'Finscope P11 - QR.html',active:true}];
+  return(
+    <div style={{height:52,background:C.white,borderBottom:`1px solid ${C.g200}`,display:'flex',alignItems:'center',padding:'0 16px',gap:12,position:'fixed',top:0,left:0,right:0,zIndex:100}}>
+      <div style={{display:'flex',alignItems:'center',gap:8}}>
+        <div style={{background:'#fff',borderRadius:7,padding:3,boxShadow:'0 1px 4px rgba(0,0,0,0.10)',display:'flex'}}>
+          <img src="uploads/imagen.png" width={22} height={22} alt="Finscope" style={{display:'block'}}/>
+        </div>
+        <span style={{fontWeight:700,fontSize:16,color:C.g900,letterSpacing:'-0.4px'}}>Finscope</span>
+      </div>
+      <div style={{display:'flex',gap:0,height:'100%',alignItems:'center',flex:1}}>
+        {pages.map(p=><a key={p.label} href={p.href} style={{padding:'0 10px',height:'100%',display:'flex',alignItems:'center',fontSize:12,fontWeight:p.active?600:400,color:p.active?C.magenta:C.g700,borderBottom:p.active?`2px solid ${C.magenta}`:'2px solid transparent',textDecoration:'none'}}>{p.label}</a>)}
+      </div>
+      <span style={{fontSize:11,fontWeight:500,color:C.g500,background:C.g50,borderRadius:5,padding:'3px 8px',border:`1px solid ${C.g200}`}}>Could-Have · MVP opcional</span>
+    </div>
+  );
+}
+
+function App(){
+  return(
+    <>
+      <NavBar/>
+      <div style={{display:'flex',justifyContent:'center',alignItems:'flex-start',background:'#EDECEA',padding:'20px 32px',minHeight:'calc(100vh - 52px)',marginTop:52,overflowY:'auto'}}>
+        <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:12}}>
+          <span style={{fontSize:11,fontWeight:600,color:C.g500,textTransform:'uppercase',letterSpacing:'0.8px',background:C.g50,borderRadius:6,padding:'3px 10px',border:`1px solid ${C.g200}`}}>P11 — QR Concesionario · Solo móvil</span>
+          <IOSDevice width={375} height={812}><QRScreen/></IOSDevice>
+        </div>
+      </div>
+    </>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

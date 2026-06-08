@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Finscope — P10 Espera por integración</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet"/>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script src="ios-frame.jsx" type="text/babel"></script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Roboto',sans-serif;background:#F5F4F2;}
+    ::-webkit-scrollbar{width:5px;} ::-webkit-scrollbar-thumb{background:#DEDBD7;border-radius:3px;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+    @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+    @keyframes slideDown{from{transform:translateY(-100%);opacity:0;}to{transform:none;opacity:1;}}
+  </style>
+</head>
+<body><div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect } = React;
+const C = {magenta:'#ee252a',magentaL:'rgba(238,37,42,0.08)',blue:'#3f5cdd',orange:'#f97316',orangeL:'rgba(249,115,22,0.10)',green:'#22c55e',g900:'#212121',g700:'#616161',g500:'#9E9E9E',g200:'#EEEEEE',g50:'#FAFAFA',white:'#FFFFFF'};
+
+const INTEGRACIONES = [
+  {nombre:'RUNT',         estado:'operativo',   ultima:'Hace 2 min', afectados:0,  estimado:'—'},
+  {nombre:'DataCrédito',  estado:'degradado',   ultima:'Hace 8 min', afectados:3,  estimado:'~2 horas'},
+  {nombre:'Automas',      estado:'operativo',   ultima:'Hace 1 min', afectados:0,  estimado:'—'},
+  {nombre:'Mareigua',     estado:'caído',       ultima:'Hace 45 min',afectados:7,  estimado:'~4 horas'},
+  {nombre:'SOI',          estado:'operativo',   ultima:'Hace 3 min', afectados:0,  estimado:'—'},
+  {nombre:'Core bancario',estado:'operativo',   ultima:'Hace 1 min', afectados:0,  estimado:'—'},
+];
+
+const estadoColor = {operativo:C.green, degradado:'#f59e0b', caído:'#ef4444'};
+const estadoBg    = {operativo:'#f0fdf4',degradado:'#fffbeb',caído:'#fef2f2'};
+
+function Logo({dark=false}){
+  return(
+    <div style={{display:'flex',alignItems:'center',gap:8}}>
+      <div style={{background:'#fff',borderRadius:7,padding:3,boxShadow:'0 1px 4px rgba(0,0,0,0.10)',display:'flex'}}>
+        <img src="uploads/imagen.png" width={22} height={22} alt="Finscope" style={{display:'block'}}/>
+      </div>
+      <span style={{fontWeight:700,fontSize:16,color:dark?'#fff':C.g900,letterSpacing:'-0.4px'}}>Finscope</span>
+    </div>
+  );
+}
+
+/* ── Spinner animado ─────────────────────────────────── */
+function Spinner({size=40,color=C.orange}){
+  return <div style={{width:size,height:size,borderRadius:'50%',border:`3px solid ${color}22`,borderTopColor:color,animation:'spin 1s linear infinite'}}/>;
+}
+
+/* ── Dot pulsante ────────────────────────────────────── */
+function PulseDot({color=C.orange}){
+  return(
+    <span style={{display:'inline-flex',alignItems:'center',justifyContent:'center',width:10,height:10,flexShrink:0}}>
+      <span style={{width:8,height:8,borderRadius:'50%',background:color,display:'block',animation:'pulse 1.5s ease-in-out infinite'}}/>
+    </span>
+  );
+}
+
+/* ══════════════════════════════════════════════════════
+   VARIANTE CLIENTE — MÓVIL
+   ══════════════════════════════════════════════════════ */
+function ClienteMobile(){
+  const [mins,setMins]=useState(47);
+  useEffect(()=>{
+    const t=setInterval(()=>setMins(m=>m>0?m-1:0),60000);
+    return ()=>clearInterval(t);
+  },[]);
+  return(
+    <div style={{background:C.white,minHeight:'100%',display:'flex',flexDirection:'column',paddingBottom:40,animation:'fadeIn 0.4s ease'}}>
+      <div style={{padding:'68px 20px 18px',borderBottom:`1px solid ${C.g200}`}}><Logo/></div>
+      <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'40px 28px',textAlign:'center',gap:0}}>
+        <div style={{marginBottom:32}}>
+          <Spinner size={56} color={C.orange}/>
+        </div>
+        <span style={{fontSize:11,fontWeight:600,color:C.orange,textTransform:'uppercase',letterSpacing:'0.8px',background:C.orangeL,borderRadius:6,padding:'3px 10px',marginBottom:20,display:'inline-block'}}>Tu solicitud está en pausa breve</span>
+        <h1 style={{fontSize:22,fontWeight:700,color:C.g900,lineHeight:1.3,marginBottom:12}}>Estamos consultando información con una entidad externa.</h1>
+        <p style={{fontSize:14,color:C.g700,lineHeight:1.7,marginBottom:8}}>No tienes que hacer nada por ahora. Continuamos en cuanto tengamos respuesta.</p>
+        <div style={{background:C.orangeL,border:`1px solid ${C.orange}30`,borderRadius:10,padding:'12px 18px',marginTop:16,marginBottom:28}}>
+          <div style={{fontSize:12,color:C.g700,marginBottom:4}}>Tiempo estimado</div>
+          <div style={{fontSize:22,fontWeight:700,color:C.orange}}>~{mins} min</div>
+          <div style={{fontSize:12,color:C.g500,marginTop:2}}>Te avisaremos cuando tengamos novedad.</div>
+        </div>
+        <div style={{width:'100%',display:'flex',flexDirection:'column',gap:10}}>
+          <button style={{padding:13,borderRadius:12,background:C.magenta,color:'#fff',fontSize:14,fontWeight:600,border:'none',cursor:'pointer'}}>Ver estado de mi solicitud</button>
+          <button style={{padding:13,borderRadius:12,background:'transparent',color:C.g700,fontSize:14,border:`1px solid ${C.g200}`,cursor:'pointer'}}>Hablar con un ejecutivo</button>
+        </div>
+      </div>
+      <div style={{padding:'14px 24px',textAlign:'center',borderTop:`1px solid ${C.g200}`}}>
+        <span style={{fontSize:12,color:C.blue,textDecoration:'underline',cursor:'pointer'}}>Tratamiento de datos personales</span>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════
+   TABLERO DE INTEGRACIONES (interno)
+   ══════════════════════════════════════════════════════ */
+function TableroPantallaCompleta({onClose}){
+  const [ints,setInts]=useState(INTEGRACIONES);
+  function retry(nombre){
+    setInts(prev=>prev.map(i=>i.nombre===nombre?{...i,estado:'degradado',ultima:'Ahora mismo'}:i));
+    setTimeout(()=>setInts(prev=>prev.map(i=>i.nombre===nombre?{...i,estado:'operativo',ultima:'Hace 1 seg',afectados:0}:i)),2000);
+  }
+  return(
+    <div style={{position:'fixed',inset:0,background:C.g50,zIndex:500,display:'flex',flexDirection:'column',animation:'fadeIn 0.25s ease'}}>
+      <div style={{background:C.white,borderBottom:`1px solid ${C.g200}`,padding:'0 24px',height:52,display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
+        <div style={{display:'flex',alignItems:'center',gap:12}}>
+          <Logo/>
+          <span style={{fontSize:14,fontWeight:600,color:C.g900}}>Estado de integraciones externas</span>
+        </div>
+        <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',fontSize:20,color:C.g500}}>✕</button>
+      </div>
+      <div style={{flex:1,overflowY:'auto',padding:'24px 32px'}}>
+        <div style={{display:'flex',gap:16,marginBottom:24}}>
+          {[{label:'Operativas',val:ints.filter(i=>i.estado==='operativo').length,color:C.green},{label:'Degradadas',val:ints.filter(i=>i.estado==='degradado').length,color:'#f59e0b'},{label:'Caídas',val:ints.filter(i=>i.estado==='caído').length,color:'#ef4444'},{label:'Casos afectados',val:ints.reduce((a,i)=>a+i.afectados,0),color:C.orange}].map(m=>(
+            <div key={m.label} style={{flex:1,background:C.white,borderRadius:12,padding:'16px 18px',border:`1px solid ${C.g200}`}}>
+              <div style={{fontSize:12,color:C.g500,marginBottom:6}}>{m.label}</div>
+              <div style={{fontSize:28,fontWeight:700,color:m.color}}>{m.val}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{background:C.white,borderRadius:14,overflow:'hidden',border:`1px solid ${C.g200}`}}>
+          <div style={{display:'grid',gridTemplateColumns:'160px 130px 160px 130px 180px 140px',padding:'10px 16px',background:C.g50,gap:8}}>
+            {['Servicio','Estado','Última verif.','Casos afect.','Tiempo estimado',''].map((h,i)=>(
+              <div key={i} style={{fontSize:11,fontWeight:600,color:C.g500,textTransform:'uppercase',letterSpacing:'0.5px'}}>{h}</div>
+            ))}
+          </div>
+          {ints.map(int=>(
+            <div key={int.nombre} style={{display:'grid',gridTemplateColumns:'160px 130px 160px 130px 180px 140px',padding:'14px 16px',borderTop:`1px solid ${C.g200}`,alignItems:'center',gap:8}}>
+              <span style={{fontSize:14,fontWeight:500,color:C.g900}}>{int.nombre}</span>
+              <div style={{display:'flex',alignItems:'center',gap:6}}>
+                <PulseDot color={estadoColor[int.estado]}/>
+                <span style={{fontSize:13,fontWeight:500,color:estadoColor[int.estado],textTransform:'capitalize'}}>{int.estado}</span>
+              </div>
+              <span style={{fontSize:13,color:C.g500}}>{int.ultima}</span>
+              <span style={{fontSize:13,fontWeight:int.afectados>0?600:400,color:int.afectados>0?C.orange:C.g500}}>{int.afectados>0?`${int.afectados} casos`:'—'}</span>
+              <span style={{fontSize:13,color:int.estimado!=='—'?C.orange:C.g500}}>{int.estimado}</span>
+              {int.estado!=='operativo'
+                ?<button onClick={()=>retry(int.nombre)} style={{padding:'6px 14px',borderRadius:7,background:C.g50,border:`1px solid ${C.g200}`,fontSize:12,color:C.blue,cursor:'pointer',fontFamily:'Roboto'}}>Reintentar</button>
+                :<span style={{fontSize:12,color:C.green}}>✓ OK</span>}
+            </div>
+          ))}
+        </div>
+        <p style={{fontSize:12,color:C.g500,marginTop:12}}>Verificación automática cada 5 minutos. Los casos afectados se procesan automáticamente cuando el servicio se restablece.</p>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════
+   VARIANTE INTERNA — DESKTOP (con banner + simulación de P3)
+   ══════════════════════════════════════════════════════ */
+function InternoDesktop(){
+  const [tablero,setTablero]=useState(false);
+  const [bannerVisible,setBannerVisible]=useState(true);
+  const [bannerEstado,setBannerEstado]=useState('orange'); // orange | red | green
+  const [tiempo,setTiempo]=useState(45);
+
+  // Simular escalada a rojo a los 4h y restauración
+  function simularRestauracion(){
+    setBannerEstado('green');
+    setTimeout(()=>setBannerVisible(false),3000);
+  }
+  function simularEscalada(){ setBannerEstado('red'); }
+
+  const bannerProps = {
+    orange:{bg:'#fff7ed',border:'#fed7aa',color:'#c2410c',icon:'⚠️',text:'DataCrédito está intermitente desde las 14:23. Los casos afectados están marcados en tu cola.'},
+    red:   {bg:'#fef2f2',border:'#fca5a5',color:'#dc2626',icon:'🚨',text:'DataCrédito lleva más de 4 h caído. Se ha notificado al coordinador de crédito con el resumen de impacto.'},
+    green: {bg:'#f0fdf4',border:'#86efac',color:'#166534',icon:'✓',text:'DataCrédito operativo. Los casos pendientes se procesarán en los próximos minutos.'},
+  };
+  const bp=bannerProps[bannerEstado];
+
+  // Mock de cola del analista con badges P10
+  const CASOS=[
+    {id:'SOL-2024-0891',name:'Carlos Mejía',    motor:'aprobar', p10:false,tiempo:'8 min'},
+    {id:'SOL-2024-0892',name:'Ana Rodríguez',   motor:'revisar', p10:true, tiempo:'22 min'},
+    {id:'SOL-2024-0893',name:'Tomás Peña',      motor:'aprobar', p10:false,tiempo:'35 min'},
+    {id:'SOL-2024-0894',name:'Diego Castro',    motor:'rechazar',p10:true, tiempo:'1 h'},
+    {id:'SOL-2024-0895',name:'Valeria Ortiz',   motor:'atipico', p10:false,tiempo:'2 h'},
+  ];
+  const mColors={aprobar:'#22c55e',revisar:'#f59e0b',rechazar:'#ef4444',atipico:C.g500};
+  const mLabels={aprobar:'Aprobar',revisar:'Revisar',rechazar:'Rechazar',atipico:'Atípico'};
+
+  return(
+    <div style={{minHeight:'calc(100vh - 52px)',marginTop:52,display:'flex',flexDirection:'column'}}>
+      {/* Banner transversal */}
+      {bannerVisible&&(
+        <div style={{background:bp.bg,borderBottom:`1px solid ${bp.border}`,padding:'10px 24px',display:'flex',alignItems:'center',gap:12,animation:'slideDown 0.3s ease',flexShrink:0}}>
+          <span style={{fontSize:16}}>{bp.icon}</span>
+          <span style={{fontSize:13,color:bp.color,flex:1}}>{bp.text}</span>
+          <button onClick={()=>setTablero(true)} style={{padding:'5px 12px',borderRadius:7,background:'transparent',border:`1px solid ${bp.color}60`,color:bp.color,fontSize:12,cursor:'pointer',fontFamily:'Roboto',whiteSpace:'nowrap'}}>Ver tablero</button>
+          {bannerEstado==='orange'&&<button onClick={simularEscalada} style={{padding:'5px 12px',borderRadius:7,background:'transparent',border:`1px solid #f59e0b`,color:'#92400e',fontSize:11,cursor:'pointer',fontFamily:'Roboto',whiteSpace:'nowrap'}}>Simular &gt;4h</button>}
+          {bannerEstado==='red'&&<button onClick={simularRestauracion} style={{padding:'5px 12px',borderRadius:7,background:'transparent',border:`1px solid #86efac`,color:'#166534',fontSize:11,cursor:'pointer',fontFamily:'Roboto',whiteSpace:'nowrap'}}>Simular restauración</button>}
+          <button onClick={()=>setBannerVisible(false)} style={{background:'none',border:'none',cursor:'pointer',color:bp.color,fontSize:18,lineHeight:1,marginLeft:4}}>×</button>
+        </div>
+      )}
+      {/* Contenido simulado: cola del analista con badges */}
+      <div style={{display:'flex',flex:1}}>
+        {/* Cola */}
+        <div style={{width:'30%',borderRight:`1px solid ${C.g200}`,background:C.white,display:'flex',flexDirection:'column'}}>
+          <div style={{padding:'14px 16px',borderBottom:`1px solid ${C.g200}`}}>
+            <div style={{fontSize:14,fontWeight:600,color:C.g900,marginBottom:8}}>Mi cola — {CASOS.length} casos</div>
+            <div style={{fontSize:12,color:C.orange,background:C.orangeL,borderRadius:6,padding:'4px 8px',display:'inline-flex',alignItems:'center',gap:4}}>
+              <PulseDot color={C.orange}/>
+              {CASOS.filter(c=>c.p10).length} casos esperando DataCrédito
+            </div>
+          </div>
+          <div style={{flex:1,overflowY:'auto'}}>
+            {CASOS.map((c,i)=>(
+              <div key={c.id} style={{padding:'12px 16px',borderBottom:`1px solid ${C.g200}`,background:i===0?C.magentaL:C.white,borderLeft:i===0?`3px solid ${C.magenta}`:'3px solid transparent'}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:4}}>
+                  <span style={{fontSize:14,fontWeight:600,color:C.g900}}>{c.name}</span>
+                  {c.p10&&<span style={{fontSize:10,fontWeight:600,background:'#fff7ed',color:'#c2410c',borderRadius:4,padding:'2px 6px',border:'1px solid #fed7aa',flexShrink:0}}>Consulta ext.</span>}
+                </div>
+                <div style={{fontSize:12,color:C.g500,marginBottom:5}}>{c.id}</div>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                  <span style={{fontSize:12,color:mColors[c.motor],fontWeight:500,display:'flex',alignItems:'center',gap:4}}>
+                    <span style={{width:7,height:7,borderRadius:'50%',background:mColors[c.motor],display:'inline-block'}}/>
+                    {mLabels[c.motor]}
+                  </span>
+                  <span style={{fontSize:11,color:C.g500}}>{c.tiempo}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* Detalle caso con sección C afectada */}
+        <div style={{flex:1,overflowY:'auto',padding:'20px 24px',display:'flex',flexDirection:'column',gap:14}}>
+          <div>
+            <div style={{fontSize:18,fontWeight:700,color:C.g900}}>Carlos Mejía</div>
+            <div style={{fontSize:13,color:C.g500}}>SOL-2024-0891 · $35.000.000 · 48 meses</div>
+          </div>
+          {/* Sección C con DataCrédito caído */}
+          <div style={{borderRadius:12,border:`1px solid ${C.g200}`,overflow:'hidden'}}>
+            <div style={{background:C.g50,padding:'10px 16px',fontSize:12,fontWeight:600,color:C.g700,textTransform:'uppercase',letterSpacing:'0.6px'}}>C — Consultas externas</div>
+            {[
+              {label:'RUNT',         s:'ok'},
+              {label:'DataCrédito',  s:'down', msg:'No disponible · Reintento automático en 5 min'},
+              {label:'Automas',      s:'ok'},
+              {label:'Mareigua',     s:'warn', msg:'Degradado · respuesta lenta'},
+              {label:'SOI',          s:'ok'},
+            ].map(item=>(
+              <div key={item.label} style={{display:'flex',alignItems:'center',gap:12,padding:'11px 16px',borderTop:`1px solid ${C.g200}`}}>
+                <div style={{width:8,height:8,borderRadius:'50%',flexShrink:0,background:item.s==='ok'?C.green:item.s==='down'?'#ef4444':'#f59e0b'}}/>
+                <span style={{fontSize:13,fontWeight:500,color:C.g900,width:110,flexShrink:0}}>{item.label}</span>
+                {item.s==='down'&&<div style={{width:14,height:14,borderRadius:'50%',border:`2px solid #fca5a5`,borderTopColor:'#ef4444',animation:'spin 0.7s linear infinite',flexShrink:0}}/>}
+                <span style={{fontSize:12,color:C.g500,flex:1}}>{item.msg||'Consultado OK'}</span>
+                {item.s!=='ok'&&<button style={{fontSize:11,color:C.blue,background:'none',border:`1px solid ${C.blue}`,borderRadius:5,padding:'3px 8px',cursor:'pointer',fontFamily:'Roboto',flexShrink:0}}>Reintentar</button>}
+              </div>
+            ))}
+            <div style={{padding:'10px 16px',background:'#fff7ed',borderTop:`1px solid #fed7aa`,fontSize:12,color:'#92400e'}}>
+              Si alguna fuente está caída, puedes decidir sin ella dejando constancia del motivo.
+            </div>
+          </div>
+          {/* Acción */}
+          <div style={{borderRadius:12,border:`1px solid ${C.g200}`,background:C.white,padding:16}}>
+            <p style={{fontSize:14,fontWeight:600,color:C.g900,marginBottom:14}}>D — Acción del analista</p>
+            <div style={{display:'flex',gap:10}}>
+              <button style={{flex:1,padding:'9px 6px',borderRadius:9,fontSize:12,fontWeight:500,cursor:'pointer',fontFamily:'Roboto',border:`1px solid ${C.g200}`,background:C.white,color:C.g700}}>Aceptar recomendación</button>
+              <button style={{flex:1,padding:'9px 6px',borderRadius:9,fontSize:12,fontWeight:500,cursor:'pointer',fontFamily:'Roboto',border:`1px solid ${C.g200}`,background:C.white,color:C.g700}}>Anular recomendación</button>
+              <button style={{flex:1,padding:'9px 6px',borderRadius:9,fontSize:12,fontWeight:500,cursor:'pointer',fontFamily:'Roboto',border:`1px solid ${C.g200}`,background:C.white,color:C.g700}}>Rechazar caso</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      {tablero&&<TableroPantallaCompleta onClose={()=>setTablero(false)}/>}
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════
+   APP
+   ══════════════════════════════════════════════════════ */
+function NavBar({device,setDevice,view,setView}){
+  const pages=[{label:'P1–P2',href:'Finscope Prototype.html'},{label:'P3',href:'Finscope P3 - Analista.html'},{label:'P4',href:'Finscope P4 - Coordinador.html'},{label:'P5',href:'Finscope P5 - Ejecutivo.html'},{label:'P6',href:'Finscope P6 - Ejecutivo Dashboard.html'},{label:'P7',href:'Finscope P7 - Operativo.html'},{label:'P8',href:'Finscope P8 - Desembolso.html'},{label:'P9',href:'Finscope P9 - Excepcion.html'},{label:'P10 Espera',href:'Finscope P10 - Espera.html',active:true}];
+  return(
+    <div style={{height:52,background:C.white,borderBottom:`1px solid ${C.g200}`,display:'flex',alignItems:'center',padding:'0 16px',gap:12,position:'fixed',top:0,left:0,right:0,zIndex:100}}>
+      <Logo/>
+      <div style={{display:'flex',gap:0,height:'100%',alignItems:'center',flex:1,overflow:'hidden'}}>
+        {pages.map(p=><a key={p.label} href={p.href} style={{padding:'0 9px',height:'100%',display:'flex',alignItems:'center',fontSize:12,fontWeight:p.active?600:400,color:p.active?C.magenta:C.g700,borderBottom:p.active?`2px solid ${C.magenta}`:'2px solid transparent',textDecoration:'none',whiteSpace:'nowrap'}}>{p.label}</a>)}
+      </div>
+      <div style={{display:'flex',gap:8,flexShrink:0}}>
+        {[['cliente','Cliente B2C'],['interno','Interno']].map(([v,l])=>(
+          <button key={v} onClick={()=>{setView(v);setDevice(v==='cliente'?'mobile':'desktop');}} style={{padding:'5px 12px',borderRadius:20,fontSize:12,border:`1px solid ${view===v?C.magenta:C.g200}`,background:view===v?C.magentaL:C.white,color:view===v?C.magenta:C.g700,cursor:'pointer',fontFamily:'Roboto',fontWeight:view===v?600:400}}>{l}</button>
+        ))}
+        <button onClick={()=>setDevice(d=>d==='desktop'?'mobile':'desktop')} style={{background:C.g50,border:`1px solid ${C.g200}`,borderRadius:8,padding:'6px 12px',fontSize:12,color:C.g700,cursor:'pointer',fontFamily:'Roboto'}}>{device==='desktop'?'📱':'🖥'}</button>
+      </div>
+    </div>
+  );
+}
+
+function App(){
+  const [device,setDevice]=useState('mobile');
+  const [view,setView]=useState('cliente');
+  return(
+    <>
+      <NavBar device={device} setDevice={setDevice} view={view} setView={setView}/>
+      {view==='cliente'
+        ?<div style={{display:'flex',justifyContent:'center',alignItems:'flex-start',background:'#EDECEA',padding:'20px 32px',minHeight:'calc(100vh - 52px)',marginTop:52,overflowY:'auto'}}>
+           <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:12}}>
+             <span style={{fontSize:11,fontWeight:600,color:C.orange,textTransform:'uppercase',letterSpacing:'0.8px',background:C.orangeL,borderRadius:6,padding:'3px 10px'}}>P10 — Espera por integración · Vista cliente</span>
+             <IOSDevice width={375} height={812}><ClienteMobile/></IOSDevice>
+           </div>
+         </div>
+        :<InternoDesktop/>
+      }
+    </>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
