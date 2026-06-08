@@ -2,7 +2,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import NavBar from '../../../../components/shell/NavBar';
-import DeviceToggle from '../../../../components/shell/DeviceToggle';
+import { useIsMobile } from '../../../../hooks/useIsMobile';
 import Toast from '../../../../components/ui/Toast';
 import ConfirmModal from '../../../../components/ui/ConfirmModal';
 import { C, fmt } from '../../../../lib/theme';
@@ -444,7 +444,7 @@ function ColaContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { solicitudes, loading, cambiarEstado, refetch } = useSolicitudes();
-  const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop');
+  const isMobile = useIsMobile();
   const [sel, setSel] = useState<string | null>(null);
   const [filterOrigen, setFilterOrigen] = useState<'todos' | 'ia' | 'nuevo'>('todos');
   const [toasts, setToasts] = useState<Array<{ id: number; msg: string; onUndo: () => void }>>([]);
@@ -670,9 +670,8 @@ function ColaContent() {
         tabs={TABS}
         onLogout={handleLogout}
         onReset={handleReset}
-        extra={<DeviceToggle device={device} onChange={setDevice} />}
       />
-      {device === 'desktop'
+      {!isMobile
         ? desktopContent
         : (
           <div style={{

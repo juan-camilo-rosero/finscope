@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import Logo from '../../../components/shell/Logo';
-import DeviceToggle from '../../../components/shell/DeviceToggle';
+import { useIsMobile } from '../../../hooks/useIsMobile';
 import { C, calcCuota, fmt } from '../../../lib/theme';
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
@@ -306,7 +306,7 @@ function SideCard({ data }: { data: FormData }) {
 // ─── Página principal ─────────────────────────────────────────────────────────
 
 export default function ClienteRadicar() {
-  const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop');
+  const isMobile = useIsMobile();
   const [data, setData] = useState<FormData>(EMPTY);
   const [section, setSection] = useState(0);
   const [modal, setModal] = useState(false);
@@ -367,7 +367,6 @@ export default function ClienteRadicar() {
       <Logo />
       <span style={{ marginLeft: 12, fontSize: 13, color: C.g500 }}>Solicitud de crédito vehicular</span>
       <div style={{ flex: 1 }} />
-      <DeviceToggle device={device} onChange={setDevice} />
     </div>
   );
 
@@ -633,7 +632,7 @@ export default function ClienteRadicar() {
   return (
     <>
       {header}
-      {device === 'desktop' ? desktopView : mobileView}
+      {!isMobile ? desktopView : mobileView}
       {confirmModal}
     </>
   );

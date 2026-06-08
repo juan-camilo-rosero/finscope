@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import NavBar from '../../../../components/shell/NavBar';
-import DeviceToggle from '../../../../components/shell/DeviceToggle';
+import { useIsMobile } from '../../../../hooks/useIsMobile';
 import Toast from '../../../../components/ui/Toast';
 import ConfirmModal from '../../../../components/ui/ConfirmModal';
 import { C, fmt } from '../../../../lib/theme';
@@ -608,7 +608,7 @@ function ActionZone({ solId, cliente, onEnviar, onAnular, onRechazar, onSegunda 
 export default function AnalistaCola() {
   const router = useRouter();
   const { solicitudes, cambiarEstado, refetch } = useSolicitudes();
-  const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop');
+  const isMobile = useIsMobile();
   const [selId, setSelId] = useState<string | null>(null);
   const [filter, setFilter] = useState<'todos' | 'nuevos' | 'devueltos'>('todos');
   const [toasts, setToasts] = useState<Array<{ id: number; msg: string; onUndo: () => void }>>([]);
@@ -740,7 +740,7 @@ export default function AnalistaCola() {
   ];
 
   const leftPanel = (
-    <div style={{ width: device === 'desktop' ? 300 : '100%', borderRight: device === 'desktop' ? `1px solid ${C.g200}` : 'none', display: 'flex', flexDirection: 'column', background: C.white, flexShrink: 0 }}>
+    <div style={{ width: !isMobile ? 300 : '100%', borderRight: !isMobile ? `1px solid ${C.g200}` : 'none', display: 'flex', flexDirection: 'column', background: C.white, flexShrink: 0 }}>
       <div style={{ padding: '14px 16px', borderBottom: `1px solid ${C.g200}`, flexShrink: 0 }}>
         <div style={{ fontSize: 14, fontWeight: 600, color: C.g900, marginBottom: 10 }}>Mi cola</div>
         <div style={{ display: 'flex', gap: 6 }}>
@@ -786,10 +786,9 @@ export default function AnalistaCola() {
         tabs={TABS}
         onLogout={handleLogout}
         onReset={handleReset}
-        extra={<DeviceToggle device={device} onChange={setDevice} />}
       />
 
-      {device === 'desktop' ? (
+      {!isMobile ? (
         <div style={{ display: 'flex', height: 'calc(100vh - 52px)', marginTop: 52 }}>
           {leftPanel}
           {rightPanel}

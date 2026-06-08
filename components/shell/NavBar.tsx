@@ -20,13 +20,14 @@ interface NavBarProps {
 
 const SHOW_RESET = process.env.NEXT_PUBLIC_SHOW_RESET === 'true';
 
-const ROLE_INITIALS: Record<Role, string> = {
-  cliente:     'CL',
-  analista:    'AN',
-  coordinador: 'CO',
+const ROLE_DATA: Record<Role, { iniciales: string; nombreCorto: string; rolLabel: string }> = {
+  coordinador: { iniciales: 'CO', nombreCorto: 'Coordinador', rolLabel: 'Coordinador de Crédito' },
+  analista:    { iniciales: 'AN', nombreCorto: 'Analista',    rolLabel: 'Analista de Crédito' },
+  cliente:     { iniciales: 'CL', nombreCorto: 'Cliente',     rolLabel: '' },
 };
 
 export default function NavBar({ activeLabel, rol, tabs = [], onLogout, onReset, extra }: NavBarProps) {
+  const { iniciales, nombreCorto, rolLabel } = ROLE_DATA[rol];
   return (
     <div style={{
       height: 52, background: C.white, borderBottom: `1px solid ${C.g200}`,
@@ -80,27 +81,12 @@ export default function NavBar({ activeLabel, rol, tabs = [], onLogout, onReset,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           color: '#fff', fontSize: 12, fontWeight: 600, flexShrink: 0,
         }}>
-          {ROLE_INITIALS[rol]}
+          {iniciales}
         </div>
-
-        {rol === 'coordinador' ? (
-          <div style={{ fontSize: 13 }}>
-            <div style={{ fontWeight: 500, color: C.g900, lineHeight: 1.2 }}>Coordinador</div>
-            <div style={{ fontSize: 11, color: C.g500 }}>Coordinador de Crédito</div>
-          </div>
-        ) : rol === 'analista' ? (
-          <span style={{
-            fontSize: 11, fontWeight: 600, background: C.successL, color: C.success,
-            borderRadius: 5, padding: '3px 8px', border: `1px solid ${C.success}30`,
-          }}>
-            Analista
-          </span>
-        ) : (
-          <div style={{ fontSize: 13 }}>
-            <div style={{ fontWeight: 500, color: C.g900 }}>Cliente</div>
-          </div>
-        )}
-
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 500, color: C.g900, lineHeight: 1.2 }}>{nombreCorto}</div>
+          {rolLabel && <div style={{ fontSize: 11, color: C.g500 }}>{rolLabel}</div>}
+        </div>
         {onLogout && (
           <button
             onClick={onLogout}

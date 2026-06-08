@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import NavBar from '../../../../components/shell/NavBar';
-import DeviceToggle from '../../../../components/shell/DeviceToggle';
+import { useIsMobile } from '../../../../hooks/useIsMobile';
 import { C, fmt } from '../../../../lib/theme';
 import { useSolicitudes } from '../../../../context/SolicitudesProvider';
 import type { Solicitud, Status } from '../../../../lib/types';
@@ -188,7 +188,7 @@ const FILTER_TABS: Array<{ value: FilterKey; label: string }> = [
 export default function CoordinadorDashboard() {
   const router = useRouter();
   const { solicitudes, loading, refetch } = useSolicitudes();
-  const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop');
+  const isMobile = useIsMobile();
   const [filter, setFilter] = useState<FilterKey>('todas');
   const [selected, setSelected] = useState<Solicitud | null>(null);
 
@@ -419,24 +419,21 @@ export default function CoordinadorDashboard() {
         onLogout={handleLogout}
         onReset={handleReset}
         extra={
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <a
-              href="/cliente/index.html"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                background: 'transparent', color: C.blue, fontSize: 12,
-                border: `1px solid ${C.blue}30`, borderRadius: 6, padding: '4px 10px',
-                textDecoration: 'none', whiteSpace: 'nowrap',
-              }}
-            >
-              ↗ Demo B2C
-            </a>
-            <DeviceToggle device={device} onChange={setDevice} />
-          </div>
+          <a
+            href="/cliente/index.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              background: 'transparent', color: C.blue, fontSize: 12,
+              border: `1px solid ${C.blue}30`, borderRadius: 6, padding: '4px 10px',
+              textDecoration: 'none', whiteSpace: 'nowrap',
+            }}
+          >
+            ↗ Demo B2C
+          </a>
         }
       />
-      {device === 'desktop'
+      {!isMobile
         ? desktopContent
         : (
           <div style={{
