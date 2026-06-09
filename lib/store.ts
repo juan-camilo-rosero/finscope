@@ -28,15 +28,28 @@ function clonar<T>(v: T): T {
   return JSON.parse(JSON.stringify(v));
 }
 
-// Store en memoria del servidor — en Vercel no persiste entre lambdas;
-// la UI usa Context de cliente como fuente de verdad de sesión (§8.2).
-let _store: Solicitud[] = clonar(SEED_SOLICITUDES);
+// Store en memoria del servidor.
+// En Next.js dev mode, los módulos se recargan con cada HMR, pero globalThis
+// persiste en el mismo proceso de Node.js. Esto evita que el store se reinicie
+// con cada cambio de archivo durante el desarrollo.
+declare global {
+  // eslint-disable-next-line no-var
+  var __finscope_store: Solicitud[] | undefined;
+}
+
+function getStore(): Solicitud[] {
+  if (!globalThis.__finscope_store) {
+    globalThis.__finscope_store = clonar(SEED_SOLICITUDES);
+  }
+  return globalThis.__finscope_store;
+}
 
 export function reset(): void {
-  _store = clonar(SEED_SOLICITUDES);
+  globalThis.__finscope_store = clonar(SEED_SOLICITUDES);
 }
 
 export function listar(filtro?: { status?: Status; flujo?: Flujo; ejecutivo?: string }): Solicitud[] {
+  const _store = getStore();
   let resultado = _store;
   if (filtro?.status)    resultado = resultado.filter(s => s.status === filtro.status);
   if (filtro?.flujo)     resultado = resultado.filter(s => s.flujo  === filtro.flujo);
@@ -45,6 +58,7 @@ export function listar(filtro?: { status?: Status; flujo?: Flujo; ejecutivo?: st
 }
 
 export function obtener(id: string): Solicitud | undefined {
+  const _store = getStore();
   const s = _store.find(s => s.id === id);
   return s ? clonar(s) : undefined;
 }
@@ -103,8 +117,21 @@ export function crear(input: CrearInput): Solicitud {
     updated: 'Justo ahora',
     createdAt: ahora,
   };
+  const _store = getStore();
   _store.push(nueva);
   return clonar(nueva);
+}
+
+export function guardarIntegracion(
+  id: string,
+  servicio: 'datacredito' | 'runt' | 'automas' | 'soi',
+  resultado: { estado: 'ok' | 'error'; data?: Record<string, unknown>; consultadoEn?: string }
+): Solicitud {
+  const _store = getStore();
+  const idx = _store.findIndex(s => s.id === id);
+  if (idx === -1) throw new Error(`Solicitud ${id} no encontrada`);
+  _store[idx].integraciones[servicio] = resultado;
+  return clonar(_store[idx]);
 }
 
 export function cambiarEstado(
@@ -112,6 +139,7 @@ export function cambiarEstado(
   nuevoStatus: Status,
   meta?: { motivo?: string; analista?: string; coordinador?: string; analista_override?: boolean; motivoAnulacion?: string }
 ): Solicitud {
+  const _store = getStore();
   const idx = _store.findIndex(s => s.id === id);
   if (idx === -1) throw new Error(`Solicitud ${id} no encontrada`);
 

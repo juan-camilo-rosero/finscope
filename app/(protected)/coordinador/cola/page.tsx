@@ -142,8 +142,12 @@ function CaseDetailPanel({
     borderRadius: 12, background: C.white, border: `1px solid ${C.g200}`, padding: 16,
   } as const;
 
+  const isDecision = sol.status === 'en_coordinacion';
+
   return (
-    <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      {/* ── Contenido scrolleable ──────────────────────────────────────────── */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
       {/* Cabecera */}
       <div>
         <div style={{ fontSize: 18, fontWeight: 700, color: C.g900 }}>{sol.cliente}</div>
@@ -334,95 +338,104 @@ function CaseDetailPanel({
         </div>
       </div>
 
-      {/* Zona de decisión */}
-      {sol.status === 'en_coordinacion' && (
-        <div style={sectionStyle}>
-          <p style={{ fontSize: 14, fontWeight: 600, color: C.g900, marginBottom: 12 }}>Decisión final</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      </div>{/* fin contenido scrolleable */}
+
+      {/* ── Barra de decisión sticky al fondo ─────────────────────────────── */}
+      {isDecision && (
+        <div style={{
+          flexShrink: 0, padding: '14px 24px', background: C.white,
+          borderTop: `2px solid ${C.g200}`,
+          boxShadow: '0 -4px 16px rgba(0,0,0,0.06)',
+          display: 'flex', flexDirection: 'column', gap: 10,
+        }}>
+          <p style={{ fontSize: 12, fontWeight: 600, color: C.g500, textTransform: 'uppercase', letterSpacing: '0.6px', margin: 0 }}>
+            Decisión final
+          </p>
+
+          {/* Formulario de devolución (se expande hacia arriba visualmente) */}
+          {showDevolverForm && (
+            <div style={{ background: C.warnL, borderRadius: 9, padding: 12, border: `1px solid ${C.warn}30` }}>
+              <p style={{ fontSize: 12, color: C.g700, marginBottom: 8 }}>Indica qué falta validar:</p>
+              <textarea
+                value={motivoDev}
+                onChange={e => setMotivoDev(e.target.value)}
+                placeholder="p. ej. Faltan certificados de ingresos del último trimestre"
+                style={{
+                  width: '100%', borderRadius: 7, border: `1px solid ${C.g200}`,
+                  padding: 9, fontSize: 12, fontFamily: 'Roboto',
+                  resize: 'none', height: 64, outline: 'none', boxSizing: 'border-box',
+                }}
+              />
+              <button
+                disabled={motivoDev.length < 10}
+                onClick={() => setConfirm('devolver')}
+                style={{
+                  marginTop: 8, width: '100%', padding: 10, borderRadius: 7,
+                  background: motivoDev.length >= 10 ? C.warn : C.g200,
+                  color: motivoDev.length >= 10 ? '#fff' : C.g500,
+                  fontSize: 13, fontWeight: 600, border: 'none',
+                  cursor: motivoDev.length >= 10 ? 'pointer' : 'not-allowed',
+                  fontFamily: 'Roboto',
+                }}
+              >
+                Confirmar devolución
+              </button>
+            </div>
+          )}
+
+          <div style={{ display: 'flex', gap: 10 }}>
             <button
               onClick={() => setConfirm('aprobar')}
               style={{
-                padding: 13, borderRadius: 9, background: C.success, color: '#fff',
+                flex: 2, padding: 13, borderRadius: 9, background: C.success, color: '#fff',
                 fontSize: 14, fontWeight: 600, border: 'none', cursor: 'pointer',
                 fontFamily: 'Roboto', boxShadow: `0 4px 12px ${C.success}40`,
               }}
             >
               ✓ Aprobar
             </button>
-
             {sol.flujo === 'nuevo' && (
-              <>
-                <button
-                  onClick={() => setShowDevolverForm(f => !f)}
-                  style={{
-                    padding: 11, borderRadius: 9, background: 'transparent', color: C.warn,
-                    fontSize: 13, fontWeight: 500, border: `1.5px solid ${C.warn}`,
-                    cursor: 'pointer', fontFamily: 'Roboto',
-                  }}
-                >
-                  ↺ Devolver al analista
-                </button>
-                {showDevolverForm && (
-                  <div style={{ background: C.warnL, borderRadius: 9, padding: 12, border: `1px solid ${C.warn}30` }}>
-                    <p style={{ fontSize: 12, color: C.g700, marginBottom: 8 }}>Indica qué falta validar:</p>
-                    <textarea
-                      value={motivoDev}
-                      onChange={e => setMotivoDev(e.target.value)}
-                      placeholder="p. ej. Faltan certificados de ingresos del último trimestre"
-                      style={{
-                        width: '100%', borderRadius: 7, border: `1px solid ${C.g200}`,
-                        padding: 9, fontSize: 12, fontFamily: 'Roboto',
-                        resize: 'none', height: 64, outline: 'none',
-                      }}
-                    />
-                    <button
-                      disabled={motivoDev.length < 10}
-                      onClick={() => setConfirm('devolver')}
-                      style={{
-                        marginTop: 8, width: '100%', padding: 10, borderRadius: 7,
-                        background: motivoDev.length >= 10 ? C.warn : C.g200,
-                        color: motivoDev.length >= 10 ? '#fff' : C.g500,
-                        fontSize: 13, fontWeight: 600, border: 'none',
-                        cursor: motivoDev.length >= 10 ? 'pointer' : 'not-allowed',
-                        fontFamily: 'Roboto',
-                      }}
-                    >
-                      Confirmar devolución
-                    </button>
-                  </div>
-                )}
-              </>
+              <button
+                onClick={() => setShowDevolverForm(f => !f)}
+                style={{
+                  flex: 1, padding: 11, borderRadius: 9, background: showDevolverForm ? C.warnL : 'transparent',
+                  color: C.warn, fontSize: 13, fontWeight: 500, border: `1.5px solid ${C.warn}`,
+                  cursor: 'pointer', fontFamily: 'Roboto',
+                }}
+              >
+                ↺ Devolver
+              </button>
             )}
-
             <button
               onClick={() => setConfirm('rechazar')}
               style={{
-                padding: 11, borderRadius: 9, background: 'transparent', color: C.danger,
+                flex: 1, padding: 11, borderRadius: 9, background: 'transparent', color: C.danger,
                 fontSize: 13, fontWeight: 500, border: `1.5px solid ${C.danger}`,
                 cursor: 'pointer', fontFamily: 'Roboto',
               }}
             >
-              ✕ Rechazar definitivamente
+              ✕ Rechazar
             </button>
           </div>
         </div>
       )}
 
+      {/* Modales de confirmación */}
       {confirm === 'aprobar' && (
         <ConfirmModal
           title="¿Aprobar este caso?"
           description={`Confirma la aprobación de ${fmt(sol.monto)} para ${sol.cliente}.`}
           confirmLabel="Sí, aprobar"
-          onConfirm={() => { setConfirm(null); onAprobar(); }}
+          onConfirm={async () => { await onAprobar(); setConfirm(null); }}
           onCancel={() => setConfirm(null)}
         />
       )}
       {confirm === 'devolver' && (
         <ConfirmModal
           title="¿Devolver al analista?"
-          description={`El caso volverá a la cola del analista con tu comentario.`}
+          description="El caso volverá a la cola del analista con tu comentario."
           confirmLabel="Sí, devolver"
-          onConfirm={() => { setConfirm(null); setShowDevolverForm(false); onDevolver(motivoDev); }}
+          onConfirm={async () => { await onDevolver(motivoDev); setConfirm(null); setShowDevolverForm(false); }}
           onCancel={() => setConfirm(null)}
         />
       )}
@@ -432,7 +445,7 @@ function CaseDetailPanel({
           description="El cliente recibirá notificación. Esta acción cierra el caso y no se puede deshacer pasados los 30 s del undo."
           confirmLabel="Sí, rechazar"
           variant="danger"
-          onConfirm={() => { setConfirm(null); onRechazar(); }}
+          onConfirm={async () => { await onRechazar(); setConfirm(null); }}
           onCancel={() => setConfirm(null)}
         />
       )}
@@ -447,7 +460,7 @@ function ColaContent() {
   const isMobile = useIsMobile();
   const [sel, setSel] = useState<string | null>(null);
   const [filterOrigen, setFilterOrigen] = useState<'todos' | 'ia' | 'nuevo'>('todos');
-  const [toasts, setToasts] = useState<Array<{ id: number; msg: string; onUndo: () => void }>>([]);
+  const [toasts, setToasts] = useState<Array<{ id: number; msg: string; type?: 'success' | 'error'; onUndo?: () => void }>>([]);
 
   const cola = solicitudes.filter(s => s.status === 'en_coordinacion');
 
@@ -477,14 +490,14 @@ function ColaContent() {
     pushToast('Demo reiniciado.', () => {});
   }
 
-  function pushToast(msg: string, undo: () => void) {
+  function pushToast(msg: string, undo?: () => void, type: 'success' | 'error' = 'success') {
     const id = Date.now();
-    setToasts(t => [...t, { id, msg, onUndo: undo }]);
+    setToasts(t => [...t, { id, msg, type, onUndo: undo }]);
   }
 
   async function onAprobar() {
     if (!selSol) return;
-    const { id, cliente, monto } = selSol;
+    const { id, cliente } = selSol;
     try {
       await cambiarEstado(id, 'aprobada');
       setSel(null);
@@ -492,7 +505,11 @@ function ColaContent() {
         `Caso ${id} (${cliente}) aprobado`,
         () => { cambiarEstado(id, 'en_coordinacion').catch(() => refetch()); },
       );
-    } catch { /* handled by Context */ }
+    } catch (err) {
+      await refetch();
+      setSel(null);
+      pushToast(err instanceof Error ? err.message : 'Error al aprobar — cola actualizada', undefined, 'error');
+    }
   }
 
   async function onDevolver(motivo: string) {
@@ -505,7 +522,11 @@ function ColaContent() {
         `Caso ${id} devuelto al analista`,
         () => { cambiarEstado(id, 'en_coordinacion').catch(() => refetch()); },
       );
-    } catch { /* handled by Context */ }
+    } catch (err) {
+      await refetch();
+      setSel(null);
+      pushToast(err instanceof Error ? err.message : 'Error al devolver — cola actualizada', undefined, 'error');
+    }
   }
 
   async function onRechazar() {
@@ -518,7 +539,11 @@ function ColaContent() {
         `Caso ${id} rechazado`,
         () => { cambiarEstado(id, 'en_coordinacion').catch(() => refetch()); },
       );
-    } catch { /* handled by Context */ }
+    } catch (err) {
+      await refetch();
+      setSel(null);
+      pushToast(err instanceof Error ? err.message : 'Error al rechazar — cola actualizada', undefined, 'error');
+    }
   }
 
   const queueTable = (
@@ -569,7 +594,18 @@ function ColaContent() {
         </div>
         <div style={{ flex: 1, overflowY: 'auto' }}>
           {loading ? (
-            <div style={{ padding: 32, textAlign: 'center', color: C.g500 }}>Cargando…</div>
+            <div style={{ padding: '8px 0' }}>
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} style={{ padding: '12px 14px', borderBottom: `1px solid ${C.g200}`, display: 'flex', flexDirection: 'column', gap: 7 }}>
+                  <div style={{ height: 13, width: '60%', borderRadius: 6, background: C.g200, animation: 'pulse 1.4s ease-in-out infinite' }} />
+                  <div style={{ height: 11, width: '35%', borderRadius: 6, background: C.g200, animation: 'pulse 1.4s ease-in-out infinite', animationDelay: '0.2s' }} />
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <div style={{ height: 18, width: 52, borderRadius: 10, background: C.g200, animation: 'pulse 1.4s ease-in-out infinite', animationDelay: '0.4s' }} />
+                    <div style={{ height: 18, width: 38, borderRadius: 10, background: C.g200, animation: 'pulse 1.4s ease-in-out infinite', animationDelay: '0.5s' }} />
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : filtered.length === 0 ? (
             <div style={{ padding: 32, textAlign: 'center', color: C.g500, fontSize: 14 }}>
               No hay casos pendientes de decisión
@@ -579,7 +615,7 @@ function ColaContent() {
       </div>
 
       {/* Panel de detalle derecho */}
-      <div style={{ flex: 1, overflowY: 'auto', background: C.g50 }}>
+      <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', background: C.g50 }}>
         {selSol ? (
           <CaseDetailPanel
             sol={selSol}
@@ -664,6 +700,7 @@ function ColaContent() {
 
   return (
     <>
+      <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}`}</style>
       <NavBar
         rol="coordinador"
         activeLabel="Cola de decisión"
@@ -690,7 +727,7 @@ function ColaContent() {
         )
       }
       {toasts.map(t => (
-        <Toast key={t.id} message={t.msg} onUndo={t.onUndo} onClose={() => setToasts(p => p.filter(x => x.id !== t.id))} />
+        <Toast key={t.id} message={t.msg} type={t.type} onUndo={t.onUndo} onClose={() => setToasts(p => p.filter(x => x.id !== t.id))} />
       ))}
     </>
   );

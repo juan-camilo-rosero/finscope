@@ -301,16 +301,19 @@ function IntegrationsSection({ sol }: { sol: Solicitud }) {
   const [statuses, setStatuses] = useState<Record<string, IntegStatus>>(() => initStatus(sol));
   const [results, setResults]   = useState<Record<string, unknown>>(() => initResults(sol));
 
+  // Solo reiniciar cuando cambia la solicitud seleccionada (por ID), no en cada re-render
+  // causado por el polling del proveedor que crea nuevas referencias de objeto.
   useEffect(() => {
     setStatuses(initStatus(sol));
     setResults(initResults(sol));
-  }, [sol.id, initStatus, initResults, sol]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sol.id]);
 
   async function consultar(nombre: string) {
     setStatuses(p => ({ ...p, [nombre]: 'cargando' }));
     const payload = nombre === 'RUNT'
-      ? { vehiculo: sol.vehiculo }
-      : { cedula: sol.cedula };
+      ? { vehiculo: sol.vehiculo, solicitudId: sol.id }
+      : { cedula: sol.cedula, solicitudId: sol.id };
     try {
       const res = await fetch(INTEG_ENDPOINTS[nombre], {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -438,11 +441,20 @@ function ActionZone({ solId, cliente, onEnviar, onAnular, onRechazar, onSegunda 
   return (
     <div style={{ borderRadius: 12, background: C.white, border: `1px solid ${C.g200}`, padding: 16 }}>
       <p style={{ fontSize: 14, fontWeight: 600, color: C.g900, marginBottom: 6 }}>Acción del analista</p>
-      <p style={{ fontSize: 12, color: C.g500, marginBottom: 14, lineHeight: 1.5 }}>
-        <strong>Aceptar</strong> = estoy de acuerdo con la recomendación del motor.&nbsp;
-        <strong>Anular</strong> = no estoy de acuerdo y propongo otra decisión.&nbsp;
-        <strong>Rechazar</strong> = el caso no debe avanzar al coordinador.
-      </p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 14 }}>
+        {([
+          ['Aceptar',  'Coincides con el motor — el caso pasa al coordinador.',         C.success],
+          ['Anular',   'Propones otra decisión — queda registrado en auditoría SARLAFT.', C.warn],
+          ['Rechazar', 'Cierras el caso — no avanza al coordinador.',                    C.danger],
+        ] as [string, string, string][]).map(([action, desc, color]) => (
+          <div key={action} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: color, marginTop: 5, flexShrink: 0 }} />
+            <p style={{ fontSize: 12, color: C.g500, margin: 0, lineHeight: 1.5 }}>
+              <strong style={{ color: C.g700 }}>{action}:</strong> {desc}
+            </p>
+          </div>
+        ))}
+      </div>
 
       <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
         {options.map(([m, label, sub]) => (
@@ -611,7 +623,7 @@ export default function AnalistaCola() {
   const isMobile = useIsMobile();
   const [selId, setSelId] = useState<string | null>(null);
   const [filter, setFilter] = useState<'todos' | 'nuevos' | 'devueltos'>('todos');
-  const [toasts, setToasts] = useState<Array<{ id: number; msg: string; onUndo: () => void }>>([]);
+  const [toasts, setToasts] = useState<Array<{ id: number; msg: string; type?: 'success' | 'error'; onUndo?: () => void }>>([]);
 
   useEffect(() => {
     const t = setInterval(refetch, 5000);
@@ -623,15 +635,20 @@ export default function AnalistaCola() {
   );
 
   const filtradas =
-    filter === 'nuevos'   ? cola.filter(s => s.status === 'en_analisis') :
+    filter === 'nuevos'    ? cola.filter(s => s.status === 'en_analisis') :
     filter === 'devueltos' ? cola.filter(s => s.status === 'devuelta_analista') :
-    cola;
+    // "Todos": devueltos primero — requieren atención urgente
+    [...cola].sort((a, b) => {
+      if (a.status === 'devuelta_analista' && b.status !== 'devuelta_analista') return -1;
+      if (b.status === 'devuelta_analista' && a.status !== 'devuelta_analista') return 1;
+      return 0;
+    });
 
   const sel = selId ? solicitudes.find(s => s.id === selId) ?? null : null;
 
-  function pushToast(msg: string, onUndo: () => void) {
+  function pushToast(msg: string, onUndo?: () => void, type: 'success' | 'error' = 'success') {
     const id = Date.now();
-    setToasts(t => [...t, { id, msg, onUndo }]);
+    setToasts(t => [...t, { id, msg, type, onUndo }]);
   }
 
   async function handleLogout() {
@@ -641,38 +658,58 @@ export default function AnalistaCola() {
 
   async function handleEnviar(comentario: string) {
     if (!sel) return;
-    await cambiarEstado(sel.id, 'en_coordinacion', comentario ? { motivo: comentario } : undefined);
-    const id = sel.id; const cliente = sel.cliente;
-    setSelId(null);
-    pushToast(
-      `Caso ${id} (${cliente}) enviado al coordinador`,
-      () => cambiarEstado(id, 'en_analisis').catch(() => refetch()),
-    );
+    const { id, cliente } = sel;
+    try {
+      await cambiarEstado(id, 'en_coordinacion', comentario ? { motivo: comentario } : undefined);
+      setSelId(null);
+      // Undo: devuelta_analista es la transición válida de vuelta desde en_coordinacion
+      pushToast(
+        `Caso ${id} (${cliente}) enviado al coordinador`,
+        () => cambiarEstado(id, 'devuelta_analista').catch(() => refetch()),
+      );
+    } catch (err) {
+      await refetch();
+      setSelId(null);
+      pushToast(err instanceof Error ? err.message : 'Error al enviar — cola actualizada', undefined, 'error');
+    }
   }
 
   async function handleAnular(motivo: string, categoria: string) {
     if (!sel) return;
-    await cambiarEstado(sel.id, 'en_coordinacion', {
-      analista_override: true,
-      motivoAnulacion: `[${categoria}] ${motivo}`,
-    });
-    const id = sel.id; const cliente = sel.cliente;
-    setSelId(null);
-    pushToast(
-      `Caso ${id} (${cliente}) enviado — override registrado`,
-      () => cambiarEstado(id, 'en_analisis').catch(() => refetch()),
-    );
+    const { id, cliente } = sel;
+    try {
+      await cambiarEstado(id, 'en_coordinacion', {
+        analista_override: true,
+        motivoAnulacion: `[${categoria}] ${motivo}`,
+      });
+      setSelId(null);
+      pushToast(
+        `Caso ${id} (${cliente}) enviado — override registrado`,
+        () => cambiarEstado(id, 'devuelta_analista').catch(() => refetch()),
+      );
+    } catch (err) {
+      await refetch();
+      setSelId(null);
+      pushToast(err instanceof Error ? err.message : 'Error al enviar — cola actualizada', undefined, 'error');
+    }
   }
 
   async function handleRechazar(motivo: string) {
     if (!sel) return;
-    await cambiarEstado(sel.id, 'rechazada', { motivo });
-    const id = sel.id; const cliente = sel.cliente;
-    setSelId(null);
-    pushToast(
-      `Caso ${id} (${cliente}) rechazado`,
-      () => cambiarEstado(id, 'en_analisis').catch(() => refetch()),
-    );
+    const { id, cliente } = sel;
+    try {
+      await cambiarEstado(id, 'rechazada', { motivo });
+      setSelId(null);
+      // Undo: rechazada → en_coordinacion es la única transición válida de reversión
+      pushToast(
+        `Caso ${id} (${cliente}) rechazado`,
+        () => cambiarEstado(id, 'en_coordinacion').catch(() => refetch()),
+      );
+    } catch (err) {
+      await refetch();
+      setSelId(null);
+      pushToast(err instanceof Error ? err.message : 'Error al rechazar — cola actualizada', undefined, 'error');
+    }
   }
 
   function handleSegunda() {
@@ -744,19 +781,30 @@ export default function AnalistaCola() {
       <div style={{ padding: '14px 16px', borderBottom: `1px solid ${C.g200}`, flexShrink: 0 }}>
         <div style={{ fontSize: 14, fontWeight: 600, color: C.g900, marginBottom: 10 }}>Mi cola</div>
         <div style={{ display: 'flex', gap: 6 }}>
-          {pillFilters.map(([v, label]) => (
-            <button
-              key={v}
-              onClick={() => setFilter(v)}
-              style={{
-                padding: '5px 10px', borderRadius: 20, fontSize: 11, fontWeight: 500, cursor: 'pointer', fontFamily: 'Roboto',
-                background: filter === v ? C.g900 : C.g50, color: filter === v ? C.white : C.g700,
-                border: filter === v ? 'none' : `1px solid ${C.g200}`,
-              }}
-            >
-              {label}
-            </button>
-          ))}
+          {pillFilters.map(([v, label]) => {
+            const devueltosCount = cola.filter(s => s.status === 'devuelta_analista').length;
+            const isDevueltos = v === 'devueltos';
+            const isActive = filter === v;
+            // "Devueltos" siempre resalta en rojo para señalar urgencia
+            const activeBg    = isDevueltos ? C.danger  : C.g900;
+            const inactiveBg  = isDevueltos && devueltosCount > 0 ? C.dangerL : C.g50;
+            const inactiveCol = isDevueltos && devueltosCount > 0 ? C.danger  : C.g700;
+            return (
+              <button
+                key={v}
+                onClick={() => setFilter(v)}
+                style={{
+                  padding: '5px 10px', borderRadius: 20, fontSize: 11, fontWeight: 500,
+                  cursor: 'pointer', fontFamily: 'Roboto',
+                  background: isActive ? activeBg : inactiveBg,
+                  color: isActive ? C.white : inactiveCol,
+                  border: isActive ? 'none' : `1px solid ${isDevueltos && devueltosCount > 0 ? C.danger + '40' : C.g200}`,
+                }}
+              >
+                {label}
+              </button>
+            );
+          })}
         </div>
       </div>
       <div style={{ flex: 1, overflowY: 'auto' }}>
@@ -827,7 +875,7 @@ export default function AnalistaCola() {
       )}
 
       {toasts.map(t => (
-        <Toast key={t.id} message={t.msg} onUndo={t.onUndo} onClose={() => setToasts(p => p.filter(x => x.id !== t.id))} />
+        <Toast key={t.id} message={t.msg} type={t.type} onUndo={t.onUndo} onClose={() => setToasts(p => p.filter(x => x.id !== t.id))} />
       ))}
     </>
   );
