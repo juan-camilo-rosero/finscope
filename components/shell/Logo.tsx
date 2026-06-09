@@ -13,7 +13,7 @@ export default function Logo({ size = 'md' }: LogoProps) {
         boxShadow: '0 1px 4px rgba(0,0,0,0.10)', display: 'flex',
       }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/imagen.png" width={imgSize} height={imgSize} alt="Finscope" style={{ display: 'block' }} />
+        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSNeXv430JYlhQn-ZR5_n8_rNfgFfjvDVcW0Wv0YexVpbxpplcAREANAGBi&s=10" width={imgSize} height={imgSize} alt="Finscope" style={{ display: 'block' }} />
       </div>
       <span style={{ fontWeight: 700, fontSize, color: '#212121', letterSpacing: '-0.4px' }}>
         Finscope
